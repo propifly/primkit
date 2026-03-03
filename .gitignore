@@ -1,0 +1,49 @@
+# Binaries
+/bin/
+taskprim
+stateprim
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test binary, built with `go test -c`
+*.test
+
+# Output of the go coverage tool
+*.out
+coverage.html
+
+# Go workspace file
+go.work.sum
+
+# Dependency directories
+vendor/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# SQLite databases (local dev)
+*.db
+*.db-shm
+*.db-wal
+
+# Config with secrets (template is tracked, actual config is not)
+config.yaml
+!config.example.yaml
+
+# Environment files
+.env
+.env.*
+
+# Build artifacts
+dist/
