@@ -1,12 +1,18 @@
-# primkit
+<p align="center">
+  <img src="docs/assets/logo.png" alt="primkit logo" width="128">
+</p>
 
-[![CI](https://github.com/propifly/primkit/actions/workflows/ci.yml/badge.svg)](https://github.com/propifly/primkit/actions/workflows/ci.yml)
-[![Release](https://img.shields.io/github/v/release/propifly/primkit)](https://github.com/propifly/primkit/releases/latest)
-[![Go Report Card](https://goreportcard.com/badge/github.com/propifly/primkit/primkit)](https://goreportcard.com/report/github.com/propifly/primkit/primkit)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
-[![Go Version](https://img.shields.io/badge/Go-1.22+-00ADD8?logo=go&logoColor=white)](https://go.dev/dl/)
+<h1 align="center">primkit</h1>
 
-**Task management and state persistence for AI agents.** Single Go binaries with embedded SQLite — no dependencies, no Docker, no database server.
+<p align="center">
+  <a href="https://github.com/propifly/primkit/actions/workflows/ci.yml"><img src="https://github.com/propifly/primkit/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="https://github.com/propifly/primkit/releases/latest"><img src="https://img.shields.io/github/v/release/propifly/primkit" alt="Release"></a>
+  <a href="https://goreportcard.com/report/github.com/propifly/primkit/primkit"><img src="https://goreportcard.com/badge/github.com/propifly/primkit/primkit" alt="Go Report Card"></a>
+  <a href="./LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT"></a>
+  <a href="https://go.dev/dl/"><img src="https://img.shields.io/badge/Go-1.22+-00ADD8?logo=go&logoColor=white" alt="Go Version"></a>
+</p>
+
+<p align="center"><strong>Task management and state persistence for AI agents.</strong><br>Single Go binaries with embedded SQLite — no dependencies, no Docker, no database server.</p>
 
 - **CLI-first** — agents with shell access (Claude Code, Codex, Cursor) use the CLI directly. No MCP required.
 - **Three interfaces** — CLI, HTTP API, and MCP (Model Context Protocol) from the same binary
