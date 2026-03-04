@@ -81,6 +81,40 @@ Each primitive is a **single Go binary** with three access modes:
 
 ## Installation
 
+### Pre-built binaries (recommended)
+
+Download the latest release for your platform:
+
+```bash
+# macOS (Apple Silicon)
+curl -sL https://github.com/propifly/primkit/releases/latest/download/taskprim_0.1.0_darwin_arm64.tar.gz | tar xz
+curl -sL https://github.com/propifly/primkit/releases/latest/download/stateprim_0.1.0_darwin_arm64.tar.gz | tar xz
+
+# macOS (Intel)
+curl -sL https://github.com/propifly/primkit/releases/latest/download/taskprim_0.1.0_darwin_amd64.tar.gz | tar xz
+curl -sL https://github.com/propifly/primkit/releases/latest/download/stateprim_0.1.0_darwin_amd64.tar.gz | tar xz
+
+# Linux (x86_64)
+curl -sL https://github.com/propifly/primkit/releases/latest/download/taskprim_0.1.0_linux_amd64.tar.gz | tar xz
+curl -sL https://github.com/propifly/primkit/releases/latest/download/stateprim_0.1.0_linux_amd64.tar.gz | tar xz
+
+# Linux (ARM64 / Raspberry Pi)
+curl -sL https://github.com/propifly/primkit/releases/latest/download/taskprim_0.1.0_linux_arm64.tar.gz | tar xz
+curl -sL https://github.com/propifly/primkit/releases/latest/download/stateprim_0.1.0_linux_arm64.tar.gz | tar xz
+```
+
+Move to your PATH:
+
+```bash
+sudo mv taskprim stateprim /usr/local/bin/
+```
+
+Or use `gh`:
+
+```bash
+gh release download v0.1.0 --repo propifly/primkit --pattern '*darwin_arm64*'
+```
+
 ### From source
 
 Requires [Go 1.22+](https://go.dev/dl/):
@@ -89,20 +123,7 @@ Requires [Go 1.22+](https://go.dev/dl/):
 git clone https://github.com/propifly/primkit.git
 cd primkit
 make build
-```
-
-Binaries are built to `./bin/`:
-
-```
-bin/taskprim
-bin/stateprim
-```
-
-### Cross-compile for Raspberry Pi
-
-```bash
-make build-pi
-# Produces bin/taskprim-linux-arm64 and bin/stateprim-linux-arm64
+# Binaries: bin/taskprim, bin/stateprim
 ```
 
 ## Quick start
@@ -196,6 +217,30 @@ curl -H "Authorization: Bearer tp_sk_your_key_here" \
   http://localhost:8090/v1/tasks
 ```
 
+## Agent Quick Start
+
+Three commands to verify the install:
+
+```bash
+# 1. Create a task (auto-creates ~/.taskprim/default.db)
+taskprim add "test task" --list default --source agent
+
+# 2. List it back
+taskprim list --format json
+
+# 3. Mark it done (use the ID from step 2)
+taskprim done t_<id>
+```
+
+For stateprim:
+
+```bash
+stateprim set test hello '"world"'
+stateprim get test hello
+```
+
+No config file needed. The database is created automatically on first use.
+
 ## MCP (Model Context Protocol)
 
 Both primitives can run as MCP servers for direct AI agent integration:
@@ -210,19 +255,40 @@ taskprim mcp --transport sse --port 8091
 stateprim mcp --transport sse --port 8092
 ```
 
-### Claude Desktop configuration
+### Claude Code configuration
 
-Add to your Claude Desktop `claude_desktop_config.json`:
+Add to your project's `.mcp.json`:
 
 ```json
 {
   "mcpServers": {
     "taskprim": {
-      "command": "/path/to/taskprim",
+      "command": "taskprim",
       "args": ["mcp", "--transport", "stdio"]
     },
     "stateprim": {
-      "command": "/path/to/stateprim",
+      "command": "stateprim",
+      "args": ["mcp", "--transport", "stdio"]
+    }
+  }
+}
+```
+
+If the binaries aren't on your PATH, use the full path (e.g., `/usr/local/bin/taskprim`).
+
+### Claude Desktop configuration
+
+Add to your `claude_desktop_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "taskprim": {
+      "command": "/usr/local/bin/taskprim",
+      "args": ["mcp", "--transport", "stdio"]
+    },
+    "stateprim": {
+      "command": "/usr/local/bin/stateprim",
       "args": ["mcp", "--transport", "stdio"]
     }
   }
