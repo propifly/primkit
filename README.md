@@ -1,17 +1,34 @@
 # primkit
 
-Agent-native operational primitives. Single Go binaries with embedded SQLite that give AI agents structured, queryable infrastructure for the two things every production agent needs: **task management** and **operational state**.
+[![CI](https://github.com/propifly/primkit/actions/workflows/ci.yml/badge.svg)](https://github.com/propifly/primkit/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/propifly/primkit)](https://github.com/propifly/primkit/releases/latest)
+[![Go Report Card](https://goreportcard.com/badge/github.com/propifly/primkit/primkit)](https://goreportcard.com/report/github.com/propifly/primkit/primkit)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
+[![Go Version](https://img.shields.io/badge/Go-1.22+-00ADD8?logo=go&logoColor=white)](https://go.dev/dl/)
+
+**Task management and state persistence for AI agents.** Single Go binaries with embedded SQLite — no dependencies, no Docker, no database server.
+
+- **CLI-first** — agents with shell access (Claude Code, Codex, Cursor) use the CLI directly. No MCP required.
+- **Three interfaces** — CLI, HTTP API, and MCP (Model Context Protocol) from the same binary
+- **Zero config** — database auto-creates on first use. Install the binary, start using it.
+- **SQLite-native** — embedded WAL-mode database with optional cloud replication (S3, R2, B2, GCS)
 
 ---
 
-## Why primkit?
+## Table of Contents
 
-Production AI agents need to persist state, track tasks, and coordinate across sessions. Most teams duct-tape this together with markdown files, JSON blobs, or external databases. primkit provides purpose-built primitives that are:
+- [Primitives](#primitives) — taskprim + stateprim
+- [Installation](#installation) — pre-built binaries or from source
+- [Quick Start](#quick-start) — get running in 30 seconds
+- [Agent Quick Start](#agent-quick-start) — verify the install programmatically
+- [HTTP API](#http-api) — REST endpoints
+- [MCP](#mcp-model-context-protocol) — IDE integration for Claude Desktop, Cursor, etc.
+- [Configuration](#configuration) — YAML, env vars, global flags
+- [Development](#development) — build, test, lint
+- [Design Decisions](#design-decisions) — why we built it this way
+- [Documentation](#documentation) — full reference docs
 
-- **Single-binary** — no external dependencies, no Docker, no database server
-- **Three interfaces** — CLI, HTTP API, and MCP (Model Context Protocol) out of the box
-- **SQLite-native** — embedded WAL-mode database with optional cloud replication
-- **Agent-first** — designed for the access patterns agents actually use
+---
 
 ## Primitives
 
@@ -126,7 +143,7 @@ make build
 # Binaries: bin/taskprim, bin/stateprim
 ```
 
-## Quick start
+## Quick Start
 
 ### taskprim
 
@@ -164,59 +181,6 @@ stateprim append audit '{"action":"deploy","version":"1.2.3"}'
 stateprim query audit --since 24h --format json
 ```
 
-## HTTP API
-
-Both primitives can run as HTTP servers:
-
-```bash
-# taskprim on port 8090
-taskprim serve --port 8090
-
-# stateprim on port 8091
-stateprim serve --port 8091
-```
-
-### taskprim endpoints
-
-| Method | Path | Description |
-|--------|------|-------------|
-| `POST` | `/v1/tasks` | Create a task |
-| `GET` | `/v1/tasks` | List/query tasks |
-| `GET` | `/v1/tasks/{id}` | Get a task |
-| `PATCH` | `/v1/tasks/{id}` | Edit a task |
-| `POST` | `/v1/tasks/{id}/done` | Mark done |
-| `POST` | `/v1/tasks/{id}/kill` | Mark killed |
-| `POST` | `/v1/seen/{agent}` | Mark tasks as seen |
-| `GET` | `/v1/labels` | List labels |
-| `GET` | `/v1/lists` | List all lists |
-| `GET` | `/v1/stats` | Aggregate stats |
-
-### stateprim endpoints
-
-| Method | Path | Description |
-|--------|------|-------------|
-| `POST` | `/v1/records` | Set (upsert) a record |
-| `GET` | `/v1/records/{ns}/{key}` | Get a record |
-| `DELETE` | `/v1/records/{ns}/{key}` | Delete a record |
-| `POST` | `/v1/records/{ns}/set-if-new` | Create if not exists |
-| `POST` | `/v1/records/{ns}/append` | Append immutable record |
-| `GET` | `/v1/records/{ns}/has/{key}` | Existence check |
-| `GET` | `/v1/records/{ns}` | Query namespace |
-| `POST` | `/v1/records/{ns}/purge` | Purge old records |
-| `GET` | `/v1/namespaces` | List namespaces |
-| `GET` | `/v1/stats` | Aggregate stats |
-| `GET` | `/v1/export` | Export records |
-| `POST` | `/v1/import` | Import records |
-
-### Authentication
-
-When auth keys are configured, all API requests require a Bearer token:
-
-```bash
-curl -H "Authorization: Bearer tp_sk_your_key_here" \
-  http://localhost:8090/v1/tasks
-```
-
 ## Agent Quick Start
 
 Three commands to verify the install:
@@ -241,7 +205,68 @@ stateprim get test hello
 
 No config file needed. The database is created automatically on first use.
 
+## HTTP API
+
+Both primitives can run as HTTP servers:
+
+```bash
+# taskprim on port 8090
+taskprim serve --port 8090
+
+# stateprim on port 8091
+stateprim serve --port 8091
+```
+
+<details>
+<summary><strong>taskprim endpoints</strong></summary>
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `POST` | `/v1/tasks` | Create a task |
+| `GET` | `/v1/tasks` | List/query tasks |
+| `GET` | `/v1/tasks/{id}` | Get a task |
+| `PATCH` | `/v1/tasks/{id}` | Edit a task |
+| `POST` | `/v1/tasks/{id}/done` | Mark done |
+| `POST` | `/v1/tasks/{id}/kill` | Mark killed |
+| `POST` | `/v1/seen/{agent}` | Mark tasks as seen |
+| `GET` | `/v1/labels` | List labels |
+| `GET` | `/v1/lists` | List all lists |
+| `GET` | `/v1/stats` | Aggregate stats |
+
+</details>
+
+<details>
+<summary><strong>stateprim endpoints</strong></summary>
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `POST` | `/v1/records` | Set (upsert) a record |
+| `GET` | `/v1/records/{ns}/{key}` | Get a record |
+| `DELETE` | `/v1/records/{ns}/{key}` | Delete a record |
+| `POST` | `/v1/records/{ns}/set-if-new` | Create if not exists |
+| `POST` | `/v1/records/{ns}/append` | Append immutable record |
+| `GET` | `/v1/records/{ns}/has/{key}` | Existence check |
+| `GET` | `/v1/records/{ns}` | Query namespace |
+| `POST` | `/v1/records/{ns}/purge` | Purge old records |
+| `GET` | `/v1/namespaces` | List namespaces |
+| `GET` | `/v1/stats` | Aggregate stats |
+| `GET` | `/v1/export` | Export records |
+| `POST` | `/v1/import` | Import records |
+
+</details>
+
+### Authentication
+
+When auth keys are configured, all API requests require a Bearer token:
+
+```bash
+curl -H "Authorization: Bearer tp_sk_your_key_here" \
+  http://localhost:8090/v1/tasks
+```
+
 ## MCP (Model Context Protocol)
+
+> **When to use MCP vs CLI:** If your agent has shell access (Claude Code, Codex, terminal-based agents), the CLI is the simplest and most reliable option — agents are trained on CLI tools and can pipe, chain, and compose them naturally. MCP is ideal for IDE integrations (Claude Desktop, Cursor, VS Code) where there's no terminal access.
 
 Both primitives can run as MCP servers for direct AI agent integration:
 
@@ -295,11 +320,14 @@ Add to your `claude_desktop_config.json`:
 }
 ```
 
-### Available MCP tools
+<details>
+<summary><strong>Available MCP tools</strong></summary>
 
 **taskprim** (11 tools): `taskprim_add`, `taskprim_list`, `taskprim_get`, `taskprim_done`, `taskprim_kill`, `taskprim_edit`, `taskprim_seen`, `taskprim_label_clear`, `taskprim_labels`, `taskprim_lists`, `taskprim_stats`
 
 **stateprim** (10 tools): `stateprim_set`, `stateprim_get`, `stateprim_has`, `stateprim_set_if_new`, `stateprim_append`, `stateprim_delete`, `stateprim_query`, `stateprim_purge`, `stateprim_namespaces`, `stateprim_stats`
+
+</details>
 
 ## Configuration
 
@@ -338,7 +366,8 @@ Both binaries accept:
 --format <fmt>     Output format: table (default), json, quiet
 ```
 
-## Project structure
+<details>
+<summary><strong>Project structure</strong></summary>
 
 ```
 primkit/
@@ -369,6 +398,8 @@ primkit/
 ├── Makefile                  # build, test, lint, fmt, tidy, build-pi
 └── config.example.yaml       # Configuration template
 ```
+
+</details>
 
 ## Development
 
@@ -401,7 +432,7 @@ cd primkit && go test -v ./...
 
 Tests use **in-memory SQLite** — no disk I/O, no cleanup, fast and isolated.
 
-## Design decisions
+## Design Decisions
 
 | Decision | Rationale |
 |----------|-----------|
@@ -411,6 +442,7 @@ Tests use **in-memory SQLite** — no disk I/O, no cleanup, fast and isolated.
 | **Interface-based store** | CLI, API, and MCP are sibling consumers of the same contract |
 | **In-memory SQLite for tests** | Catches real SQL bugs that mocks would miss |
 | **Cobra for CLI** | De facto Go CLI standard, good completions and help |
+| **CLI-first design** | Agents with shell access prefer CLI over MCP — trained on man pages, composable with pipes |
 
 ## Roadmap
 
@@ -435,3 +467,7 @@ Tests use **in-memory SQLite** — no disk I/O, no cleanup, fast and isolated.
 MIT License — see [LICENSE](./LICENSE).
 
 Copyright (c) 2026 Propifly, Inc.
+
+---
+
+If primkit is useful to you, consider giving it a ⭐ — it helps others discover it.
