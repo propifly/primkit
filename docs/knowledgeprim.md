@@ -19,8 +19,31 @@ Entities are the nodes of your knowledge graph. Every entity has a **type** — 
 | `observation` | Empirical data point, measurement, or finding |
 | `decision` | Choice made with reasoning (architectural, product, process) |
 | `bug` | Defect with reproduction steps or workaround |
+| `instruction` | Human directive, preference, or rule the agent should follow |
+| `feedback` | Human correction or validation of agent behavior |
+| `goal` | Human objective or desired outcome |
 
 These are suggestions, not rules. Use them as a starting point and let your vocabulary evolve.
+
+### Human vs Agent Knowledge
+
+The `--source` flag tracks who captured an entity. This matters because human knowledge carries authority that agent knowledge doesn't. A human instruction like "never use float for money" is a rule. An agent observation like "this function returns a float" is data.
+
+Use `--source` consistently to distinguish them:
+
+```bash
+# Human captures a rule
+knowledgeprim capture --type instruction --title "Never use float for money" \
+  --body "Always use decimal or integer cents. Float arithmetic causes rounding errors in financial calculations." \
+  --source andres
+
+# Agent captures an observation
+knowledgeprim capture --type observation --title "PaymentService uses float64 for amounts" \
+  --body "Found in payment/service.go line 42. Returns float64 for transaction amounts." \
+  --source coding-agent
+```
+
+When an agent searches before acting, human-sourced entities provide authoritative guidance. Agent-sourced entities provide context. Both are valuable, but they serve different roles in the graph.
 
 ### Defining Your Own Types
 
@@ -298,41 +321,56 @@ These examples show end-to-end workflows for different agent types using actual 
 
 ### Coding Agent
 
-A coding agent encounters patterns, makes decisions, and tracks bugs during development.
+A coding agent searches knowledge before writing code, captures what it learns, and strengthens connections it relies on.
+
+**Before writing code — consult the graph:**
 
 ```bash
-# 1. Capture a pattern discovered during code review
+# Agent is about to implement error handling for an HTTP client.
+# Step 1: Search for existing patterns and decisions
+knowledgeprim search "error handling HTTP" --type pattern --format json
+knowledgeprim search "error handling HTTP" --type decision --format json
+knowledgeprim search "error handling HTTP" --type instruction --format json
+
+# Step 2: Found a pattern (e_ret789). Traverse to see what it connects to.
+knowledgeprim related e_ret789 --depth 2
+
+# Step 3: Found a human instruction (e_ins012) via traversal:
+#   "Always use circuit breaker for external APIs" (--source andres, weight 4.0)
+# Agent uses this to inform its implementation.
+```
+
+**After writing code — capture what was learned:**
+
+```bash
+# Step 4: Agent discovered a new pattern during implementation
 knowledgeprim capture --type pattern \
   --title "Retry with exponential backoff and jitter" \
   --body "Retry failed HTTP calls with 2^n * (1 + rand) backoff, capped at 30s. Jitter prevents thundering herd." \
   --source coding-agent
 
-# 2. Auto-connect finds a related decision entity (e_prev123)
-# Output: "Auto-connected to 2 similar entities."
-
-# 3. Capture an architectural decision
-knowledgeprim capture --type decision \
-  --title "Use circuit breaker for external API calls" \
-  --body "After three consecutive failures, open circuit for 60s before retrying." \
-  --source coding-agent
-
-# 4. Manually connect the decision to the pattern with context
-knowledgeprim connect e_new456 e_prev789 --relationship extends \
+# Step 5: Connect to the decision it extends, with context
+knowledgeprim connect e_new456 e_dec789 --relationship extends \
   --context "Circuit breaker wraps the retry pattern — retries handle transient errors, circuit breaker handles persistent outages"
 
-# 5. When the pattern comes up again, strengthen the edge
-knowledgeprim strengthen e_new456 e_prev789 extends
+# Step 6: Strengthen the edge to the instruction it followed
+knowledgeprim strengthen e_new456 e_ins012 supports
+```
 
-# 6. Search for existing patterns when writing new code
-knowledgeprim search "error handling HTTP" --type pattern
+**Periodic maintenance:**
 
-# 7. Periodic quality check
+```bash
+# Find orphaned patterns that aren't connected to anything
 knowledgeprim discover --orphans
 ```
 
+The key loop: **search -> read -> act -> capture -> connect -> strengthen**. Every session, the agent starts with more knowledge than the last.
+
 ### Research Agent
 
-A research agent captures articles, tracks evidence, and discovers contradictions.
+A research agent builds evidence maps and uses them to synthesize answers.
+
+**Capturing new evidence:**
 
 ```bash
 # 1. Capture an article
@@ -342,49 +380,189 @@ knowledgeprim capture --type article \
   --body "Benchmarks show 40% accuracy loss vs cloud inference on complex reasoning tasks." \
   --source research-agent
 
-# 2. Find it contradicts an earlier observation
+# 2. Search for related evidence to connect it
 knowledgeprim search "on-device inference accuracy" --type observation
 
-# 3. Connect with detailed context
+# 3. Connect with detailed context explaining the contradiction
 knowledgeprim connect e_article1 e_obs123 --relationship contradicts \
   --context "The 2025 benchmarks show 40% accuracy loss on complex reasoning, directly contradicting the 2024 observation claiming near-parity for most tasks"
+```
 
-# 4. Discover clusters of evidence on a topic
+**Using the graph to answer a research question:**
+
+```bash
+# Human asks: "What's the current state of on-device LLM viability?"
+
+# 1. Search for all evidence
+knowledgeprim search "on-device LLM" --format json
+
+# 2. From the top result, traverse to find supporting and contradicting evidence
+knowledgeprim related e_article1 --depth 2 --relationship contradicts
+knowledgeprim related e_article1 --depth 2 --relationship supports
+
+# 3. Check for clusters — are there separate evidence groups?
 knowledgeprim discover --clusters
 
-# 5. Find bridge entities connecting different research areas
+# 4. Find bridge concepts connecting different research areas
 knowledgeprim discover --bridges
 
-# 6. Deep traversal from a key concept
-knowledgeprim related e_concept1 --depth 3 --min-weight 2.0
+# Agent now has: articles, observations, contradictions, supporting evidence,
+# and the structure of how they relate. It synthesizes from this, not from
+# a single search result.
 ```
 
 ### Support Agent
 
-A support agent captures issues, maps solutions, and spots trends.
+A support agent builds a solution graph and searches it before responding to tickets.
+
+**When a new ticket arrives — search before responding:**
 
 ```bash
-# 1. Capture an issue and its solution
+# 1. Ticket: "Getting 504 errors intermittently"
+# Search for similar issues and known solutions
+knowledgeprim search "504 timeout" --format json
+knowledgeprim search "504 timeout" --type pattern --format json
+
+# 2. Found a matching bug entity (e_bug1). Traverse to find solutions.
+knowledgeprim related e_bug1 --relationship applies_to --direction incoming
+
+# 3. Found "Dynamic connection pool sizing" (e_pat1, weight 3.0).
+# Agent responds with this solution, citing the pattern.
+# Strengthen the edge — this solution proved useful again.
+knowledgeprim strengthen e_pat1 e_bug1 applies_to
+```
+
+**When the issue is new — capture it:**
+
+```bash
+# 4. No matching solution found. Capture the new issue.
 knowledgeprim capture --type bug \
-  --title "Connection timeout during peak hours" \
-  --body "Users report 504 errors between 2-4pm UTC. Root cause: connection pool exhaustion." \
+  --title "Memory leak in WebSocket handler after 10k connections" \
+  --body "RSS grows linearly. Goroutine count stable. Suspect buffer pool not releasing." \
   --source support-agent
 
+# 5. After resolution, capture the solution and connect it
 knowledgeprim capture --type pattern \
-  --title "Dynamic connection pool sizing" \
-  --body "Scale pool size based on concurrent request count with high-water mark." \
+  --title "Bounded buffer pool with explicit release" \
+  --body "Use sync.Pool with a max size. Call Release() in defer, not just on success path." \
   --source support-agent
 
-# 2. Connect solution to problem
-knowledgeprim connect e_pattern1 e_bug1 --relationship applies_to \
-  --context "Dynamic pool sizing directly addresses the pool exhaustion that causes the 504 errors during peak"
+knowledgeprim connect e_pat2 e_bug2 --relationship applies_to \
+  --context "Bounded pool with explicit release fixes the RSS growth by ensuring buffers return to the pool on all exit paths"
 
-# 3. When a similar issue arrives, search for existing solutions
-knowledgeprim search "connection pool timeout" --type pattern
-
-# 4. Spot incident trends over time
+# 6. Spot trends over time
 knowledgeprim discover --temporal
 ```
+
+## Training an Agent
+
+knowledgeprim is persistent memory that survives across sessions. Without it, an agent starts fresh every time. With it, the agent starts every session with accumulated knowledge. "Training" an agent means deliberately building up a graph that changes the agent's behavior — because the agent searches before acting and finds your guidance instead of guessing.
+
+### Seed Phase: Human Knowledge First
+
+The most valuable knowledge in the graph comes from humans. An agent can observe and accumulate, but humans provide the authority: rules, preferences, domain concepts, and strategic decisions.
+
+Start by seeding the graph with what you know:
+
+```bash
+# Domain rules — things the agent must always follow
+knowledgeprim capture --type instruction \
+  --title "Never use float for money" \
+  --body "Always use decimal types or integer cents. Float arithmetic causes rounding errors in financial calculations. This applies to all payment, billing, and accounting code." \
+  --source andres
+
+# Domain concepts — define terms in YOUR context
+knowledgeprim capture --type concept \
+  --title "Primitive (primkit)" \
+  --body "A self-contained infrastructure component shipped as a single binary. Each primitive owns one domain (tasks, state, knowledge) and exposes CLI, HTTP, and MCP interfaces from the same binary." \
+  --source andres
+
+# Strategic decisions — capture the reasoning, not just the choice
+knowledgeprim capture --type decision \
+  --title "Pure Go SQLite over CGo" \
+  --body "Use modernc.org/sqlite instead of mattn/go-sqlite3. Trades ~10% performance for zero CGo dependency, which simplifies ARM cross-compilation for Raspberry Pi deployments." \
+  --source andres
+
+# Connect related decisions with context
+knowledgeprim connect e_dec1 e_dec2 --relationship supports \
+  --context "The pure Go decision enables the single-binary goal — no shared libraries to ship"
+```
+
+### Correction Loops
+
+When an agent does something wrong, don't just fix it — capture the correction. The next time the agent encounters a similar situation, it finds the correction instead of repeating the mistake.
+
+```bash
+# Agent used sync.Mutex where sync.RWMutex was better.
+# Capture the correction.
+knowledgeprim capture --type feedback \
+  --title "Use RWMutex for read-heavy shared state" \
+  --body "Agent used sync.Mutex in the cache layer. This serializes all access including reads. Use sync.RWMutex when reads vastly outnumber writes — allows concurrent reads." \
+  --source andres
+
+# Connect it to the original decision if it exists
+knowledgeprim connect e_feedback1 e_dec_cache --relationship contradicts \
+  --context "The Mutex choice was wrong for this use case — read-heavy access patterns need RWMutex for acceptable performance"
+```
+
+Over time, the graph accumulates corrections. An agent that searches before writing concurrency code finds both the patterns AND the corrections — avoiding past mistakes.
+
+### Building Domain Expertise
+
+To train an agent on a specific domain, build up interconnected knowledge:
+
+```bash
+# 1. Capture foundational concepts
+knowledgeprim capture --type concept --title "WAL mode" \
+  --body "Write-Ahead Logging. SQLite writes changes to a separate WAL file before the main database. Enables concurrent readers during writes." \
+  --source andres
+
+knowledgeprim capture --type concept --title "Busy timeout" \
+  --body "SQLite waits this many milliseconds for a lock before returning SQLITE_BUSY. Set to 5000ms minimum for concurrent access patterns." \
+  --source andres
+
+# 2. Connect them with rich context
+knowledgeprim connect e_wal e_busy --relationship relates_to \
+  --context "WAL mode reduces lock contention but doesn't eliminate it — busy timeout is still needed for write-write conflicts"
+
+# 3. Add practical patterns
+knowledgeprim capture --type pattern --title "SQLite connection setup" \
+  --body "Open with WAL mode, foreign keys, busy timeout 5s. Single writer, multiple readers. Use connection pooling with max 1 writer connection." \
+  --source andres
+
+# 4. Connect pattern to concepts
+knowledgeprim connect e_pattern1 e_wal --relationship applies_to \
+  --context "The setup pattern implements WAL mode as part of the standard connection initialization"
+
+# 5. Add edge cases and gotchas
+knowledgeprim capture --type observation --title "WAL checkpoint stalls under heavy write load" \
+  --body "Observed 200ms stalls during WAL checkpoint when write rate exceeds 1000 tx/sec. Mitigation: manual checkpointing during idle periods." \
+  --source andres
+```
+
+As the domain graph grows denser, the agent's ability to navigate it improves. Searching "SQLite setup" returns the pattern. Traversing from the pattern reveals WAL mode, busy timeout, and the checkpoint gotcha. The agent writes better code because it has contextual domain knowledge, not just a pattern in isolation.
+
+### The Source Authority Pattern
+
+Use `--source` consistently. When the agent searches and finds multiple results, source helps it prioritize:
+
+- `--source andres` (human) — authoritative rules, corrections, strategic decisions
+- `--source coding-agent` — observations, accumulated patterns, auto-discovered connections
+- `--source auto` — auto-connect edges (lowest authority, useful for discovery)
+
+The agent doesn't need special logic for this. Human-sourced entities naturally accumulate more strengthened edges (because humans create targeted, high-value connections), which means `--min-weight` filtering naturally surfaces human knowledge first.
+
+### What Good Training Looks Like
+
+A well-trained agent's graph has:
+
+- **Human instructions** at the center, heavily connected to patterns and decisions
+- **Agent observations** at the edges, supporting or questioning the human knowledge
+- **Strong weight** on connections the agent has relied on repeatedly
+- **Corrections** connected to the mistakes they fix, so the agent finds both together
+- **Domain concepts** forming a backbone that agent-discovered patterns attach to
+
+The graph is not static. Every session, the agent adds observations, strengthens useful connections, and occasionally surfaces contradictions for the human to resolve. Training is ongoing, not one-time.
 
 ## Growing Your Graph
 
