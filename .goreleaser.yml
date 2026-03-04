@@ -27,6 +27,19 @@ builds:
       - amd64
       - arm64
 
+  - id: knowledgeprim
+    dir: knowledgeprim
+    main: ./cmd/knowledgeprim
+    binary: knowledgeprim
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+
 archives:
   - id: taskprim
     ids: [taskprim]
@@ -35,6 +48,10 @@ archives:
   - id: stateprim
     ids: [stateprim]
     name_template: "stateprim_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+
+  - id: knowledgeprim
+    ids: [knowledgeprim]
+    name_template: "knowledgeprim_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
 
 checksum:
   name_template: "checksums.txt"

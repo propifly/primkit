@@ -1,0 +1,39 @@
+# knowledgeprim configuration
+#
+# Environment variables can be interpolated using ${VAR} syntax.
+# All settings can also be overridden via KNOWLEDGEPRIM_* env vars.
+
+storage:
+  db: ""  # Default: ~/.knowledgeprim/default.db
+  replicate:
+    enabled: false
+    provider: "r2"            # r2, s3, b2, gcs
+    bucket: ""
+    path: "default.db"
+    endpoint: ""
+    access_key_id: "${KNOWLEDGEPRIM_R2_ACCESS_KEY_ID}"
+    secret_access_key: "${KNOWLEDGEPRIM_R2_SECRET_ACCESS_KEY}"
+
+auth:
+  keys:
+    # - key: "kp_sk_abc123..."
+    #   name: "thomas"
+
+server:
+  port: 8092
+
+# Embedding provider (optional). Without this, FTS5 search and manual edges
+# still work. Vector search and auto-connect require an embedding provider.
+embedding:
+  provider: ""               # gemini | openai | custom
+  model: ""                  # e.g., text-embedding-004 (gemini), text-embedding-3-small (openai)
+  dimensions: 768            # Must match model output
+  api_key: "${KNOWLEDGEPRIM_EMBEDDING_API_KEY}"
+  endpoint: ""               # Custom endpoint (for local models or proxies)
+
+# Auto-connect: when capturing with embeddings, automatically find and
+# connect semantically similar entities.
+auto_connect:
+  enabled: true              # Default: true (when embedding is configured)
+  threshold: 0.35            # Cosine distance threshold (lower = more similar)
+  max_connections: 10        # Cap per capture to avoid noise
