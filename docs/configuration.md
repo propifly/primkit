@@ -1,6 +1,6 @@
 # Configuration Reference
 
-Both **taskprim** and **stateprim** read the same YAML configuration format. Copy `config.example.yaml` to `config.yaml` and edit to suit your environment.
+All three primitives (**taskprim**, **stateprim**, and **knowledgeprim**) read the same YAML configuration format. Copy `config.example.yaml` to `config.yaml` and edit to suit your environment. knowledgeprim adds additional fields for embedding and auto-connect.
 
 ## Resolution Order
 
@@ -8,7 +8,7 @@ Configuration values are resolved in three layers (highest precedence wins):
 
 1. **Defaults** — hardcoded sensible values (e.g., port 8090)
 2. **YAML file** — values from your `config.yaml`, with `${ENV_VAR}` interpolation
-3. **Environment overrides** — prefix-based env vars (`TASKPRIM_*` or `STATEPRIM_*`)
+3. **Environment overrides** — prefix-based env vars (`TASKPRIM_*`, `STATEPRIM_*`, or `KNOWLEDGEPRIM_*`)
 
 ## Full YAML Spec
 
@@ -34,6 +34,19 @@ server:
 
 taskprim:
   default_list: ""
+
+# knowledgeprim-only settings (ignored by taskprim and stateprim)
+embedding:
+  provider: ""              # gemini | openai | custom (empty = disabled)
+  model: ""                 # e.g., text-embedding-004 (Gemini), text-embedding-3-small (OpenAI)
+  dimensions: 768           # expected output dimensions
+  api_key: ${EMBEDDING_API_KEY}
+  endpoint: ""              # custom endpoint for local models or proxies
+
+auto_connect:
+  enabled: true             # auto-link new entities to similar ones on capture
+  threshold: 0.35           # cosine distance threshold (lower = more similar)
+  max_connections: 10       # max auto-connections per capture
 ```
 
 ## Fields
@@ -87,6 +100,37 @@ taskprim-specific settings (ignored by stateprim).
 |-------|------|---------|-------------|
 | `default_list` | string | `""` | Default list name for new tasks when `--list` is omitted. |
 
+### `embedding` (knowledgeprim only)
+
+Vector embedding configuration. When a provider is configured, knowledgeprim generates embeddings on `capture` and enables vector and hybrid search modes.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `provider` | string | `""` | Embedding provider: `gemini`, `openai`, or `custom`. Empty string disables embedding. |
+| `model` | string | `""` | Provider-specific model name (e.g., `text-embedding-004` for Gemini, `text-embedding-3-small` for OpenAI). |
+| `dimensions` | int | `768` | Expected output vector dimensions. Must match the model's output. |
+| `api_key` | string | — | API key for the embedding provider. Use `${ENV_VAR}` interpolation. |
+| `endpoint` | string | `""` | Custom endpoint URL. Required for `custom` provider. Optional for `openai` (overrides default). Unused for `gemini`. |
+
+**Supported providers:**
+
+| Provider | Model | Dimensions | Notes |
+|----------|-------|------------|-------|
+| `gemini` | `text-embedding-004` | 768 | Google Gemini |
+| `openai` | `text-embedding-3-small` | 1536 | OpenAI |
+| `openai` | `text-embedding-3-large` | 3072 | OpenAI (highest quality) |
+| `custom` | Any | Configurable | Any OpenAI-compatible endpoint (local models, proxies) |
+
+### `auto_connect` (knowledgeprim only)
+
+Auto-connect configuration. When embedding is enabled, new entities are automatically linked to semantically similar existing entities on capture.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `enabled` | bool | `true` | Enable auto-connect when capturing with embeddings. |
+| `threshold` | float | `0.35` | Cosine distance threshold. Lower = more similar. Entities below this threshold get automatic `similar_to` edges. |
+| `max_connections` | int | `10` | Maximum number of auto-connections created per capture. |
+
 ## Environment Variable Interpolation
 
 Any value in the YAML file can reference environment variables using `${VAR_NAME}` syntax. Variables are interpolated at startup. Missing variables resolve to an empty string.
@@ -133,6 +177,27 @@ Same mapping as taskprim, with `STATEPRIM_` prefix:
 | `STATEPRIM_REPLICATE_ENDPOINT` | `storage.replicate.endpoint` |
 | `STATEPRIM_REPLICATE_ACCESS_KEY_ID` | `storage.replicate.access_key_id` |
 | `STATEPRIM_REPLICATE_SECRET_ACCESS_KEY` | `storage.replicate.secret_access_key` |
+
+### knowledgeprim prefix: `KNOWLEDGEPRIM_`
+
+Same storage/server mapping as above, plus embedding-specific overrides:
+
+| Env Var | Overrides |
+|---------|-----------|
+| `KNOWLEDGEPRIM_DB` | `storage.db` |
+| `KNOWLEDGEPRIM_SERVER_PORT` | `server.port` |
+| `KNOWLEDGEPRIM_REPLICATE_ENABLED` | `storage.replicate.enabled` |
+| `KNOWLEDGEPRIM_REPLICATE_PROVIDER` | `storage.replicate.provider` |
+| `KNOWLEDGEPRIM_REPLICATE_BUCKET` | `storage.replicate.bucket` |
+| `KNOWLEDGEPRIM_REPLICATE_PATH` | `storage.replicate.path` |
+| `KNOWLEDGEPRIM_REPLICATE_ENDPOINT` | `storage.replicate.endpoint` |
+| `KNOWLEDGEPRIM_REPLICATE_ACCESS_KEY_ID` | `storage.replicate.access_key_id` |
+| `KNOWLEDGEPRIM_REPLICATE_SECRET_ACCESS_KEY` | `storage.replicate.secret_access_key` |
+| `KNOWLEDGEPRIM_EMBEDDING_PROVIDER` | `embedding.provider` |
+| `KNOWLEDGEPRIM_EMBEDDING_MODEL` | `embedding.model` |
+| `KNOWLEDGEPRIM_EMBEDDING_DIMENSIONS` | `embedding.dimensions` |
+| `KNOWLEDGEPRIM_EMBEDDING_API_KEY` | `embedding.api_key` |
+| `KNOWLEDGEPRIM_EMBEDDING_ENDPOINT` | `embedding.endpoint` |
 
 ## Examples
 
@@ -186,13 +251,43 @@ taskprim serve
 
 When no `--config` flag is provided, defaults are used and then env overrides are applied.
 
+### knowledgeprim with Gemini embedding
+
+```yaml
+storage:
+  db: ~/.knowledgeprim/default.db
+
+embedding:
+  provider: gemini
+  model: text-embedding-004
+  dimensions: 768
+  api_key: ${GEMINI_API_KEY}
+
+auto_connect:
+  enabled: true
+  threshold: 0.35
+  max_connections: 10
+
+server:
+  port: 8092
+```
+
+### knowledgeprim without embedding (FTS-only)
+
+```yaml
+storage:
+  db: ~/.knowledgeprim/default.db
+```
+
+Works immediately. Full-text search, manual edges, graph traversal, and discovery all work without embedding.
+
 ## Database Path Resolution
 
 The database path is resolved in this order:
 
 1. `--db` flag (if provided)
-2. Environment variable (`TASKPRIM_DB` or `STATEPRIM_DB`)
-3. Home directory default (`~/.taskprim/default.db` or `~/.stateprim/default.db`)
+2. Environment variable (`TASKPRIM_DB`, `STATEPRIM_DB`, or `KNOWLEDGEPRIM_DB`)
+3. Home directory default (`~/.taskprim/default.db`, `~/.stateprim/default.db`, or `~/.knowledgeprim/default.db`)
 
 The directory is created automatically if it doesn't exist.
 

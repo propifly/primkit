@@ -12,10 +12,11 @@
   <a href="https://go.dev/dl/"><img src="https://img.shields.io/badge/Go-1.22+-00ADD8?logo=go&logoColor=white" alt="Go Version"></a>
 </p>
 
-<p align="center"><strong>Task management and state persistence for AI agents.</strong><br>Single Go binaries with embedded SQLite — no dependencies, no Docker, no database server.</p>
+<p align="center"><strong>Infrastructure primitives for AI agents — tasks, state, and knowledge.</strong><br>Single Go binaries with embedded SQLite — no dependencies, no Docker, no database server.</p>
 
 - **CLI-first** — agents with shell access (Claude Code, Codex, Cursor) use the CLI directly. No MCP required.
 - **Three interfaces** — CLI, HTTP API, and MCP (Model Context Protocol) from the same binary
+- **Three primitives** — task management, operational state, and knowledge graphs with semantic search
 - **Zero config** — database auto-creates on first use. Install the binary, start using it.
 - **SQLite-native** — embedded WAL-mode database with optional cloud replication (S3, R2, B2, GCS)
 
@@ -23,7 +24,7 @@
 
 ## Table of Contents
 
-- [Primitives](#primitives) — taskprim + stateprim
+- [Primitives](#primitives) — taskprim + stateprim + knowledgeprim
 - [Installation](#installation) — pre-built binaries or from source
 - [Quick Start](#quick-start) — get running in 30 seconds
 - [Agent Quick Start](#agent-quick-start) — verify the install programmatically
@@ -78,20 +79,45 @@ stateprim append audit '{"action":"deploy","version":"1.2.3"}'
 stateprim query audit --since 24h
 ```
 
+### knowledgeprim
+
+Knowledge graphs with semantic search and discovery. Typed entities, weighted edges with context, and hybrid retrieval (FTS5 + vector + RRF).
+
+```bash
+# Capture a knowledge entity (auto-creates ~/.knowledgeprim/default.db)
+knowledgeprim capture --type article --title "Agents prefer CLI over MCP" \
+  --body "Benchmarks show CLI tools are cheaper and agents perform better..." \
+  --source thomas
+
+# Search (hybrid: keyword + semantic)
+knowledgeprim search "agent tool preferences" --mode hybrid
+
+# Connect two entities with context
+knowledgeprim connect --source e_abc --target e_def \
+  --relationship extends --context "Builds on the CLI-first argument with cost data"
+
+# Traverse the graph
+knowledgeprim related e_abc --depth 2 --direction both
+
+# Discover patterns (orphans, clusters, bridges)
+knowledgeprim discover --clusters --bridges
+```
+
 ## Architecture
 
 ```
-┌─────────────────────────────────────────────────────┐
-│                   primkit (shared)                   │
-│  config · db · auth · server · mcp scaffold          │
-└──────────────┬──────────────────────┬────────────────┘
-               │                      │
-       ┌───────┴───────┐      ┌───────┴───────┐
-       │   taskprim    │      │   stateprim   │
-       │               │      │               │
-       │  CLI · API    │      │  CLI · API    │
-       │  MCP · Store  │      │  MCP · Store  │
-       └───────────────┘      └───────────────┘
+┌──────────────────────────────────────────────────────────────────┐
+│                        primkit (shared)                          │
+│  config · db · auth · server · mcp scaffold · replicate          │
+└─────────┬──────────────────────┬──────────────────────┬──────────┘
+          │                      │                      │
+  ┌───────┴───────┐      ┌──────┴───────┐      ┌───────┴────────┐
+  │   taskprim    │      │  stateprim   │      │ knowledgeprim  │
+  │               │      │              │      │                │
+  │  CLI · API    │      │  CLI · API   │      │  CLI · API     │
+  │  MCP · Store  │      │  MCP · Store │      │  MCP · Store   │
+  └───────────────┘      └──────────────┘      │  Embed · Search│
+                                               └────────────────┘
 ```
 
 Each primitive is a **single Go binary** with three access modes:
@@ -106,30 +132,34 @@ Each primitive is a **single Go binary** with three access modes:
 
 ### Pre-built binaries (recommended)
 
-Download the latest release for your platform:
+Download the latest release for your platform. Install only the primitives you need:
 
 ```bash
 # macOS (Apple Silicon)
 curl -sL https://github.com/propifly/primkit/releases/latest/download/taskprim_0.1.0_darwin_arm64.tar.gz | tar xz
 curl -sL https://github.com/propifly/primkit/releases/latest/download/stateprim_0.1.0_darwin_arm64.tar.gz | tar xz
+curl -sL https://github.com/propifly/primkit/releases/latest/download/knowledgeprim_0.1.0_darwin_arm64.tar.gz | tar xz
 
 # macOS (Intel)
 curl -sL https://github.com/propifly/primkit/releases/latest/download/taskprim_0.1.0_darwin_amd64.tar.gz | tar xz
 curl -sL https://github.com/propifly/primkit/releases/latest/download/stateprim_0.1.0_darwin_amd64.tar.gz | tar xz
+curl -sL https://github.com/propifly/primkit/releases/latest/download/knowledgeprim_0.1.0_darwin_amd64.tar.gz | tar xz
 
 # Linux (x86_64)
 curl -sL https://github.com/propifly/primkit/releases/latest/download/taskprim_0.1.0_linux_amd64.tar.gz | tar xz
 curl -sL https://github.com/propifly/primkit/releases/latest/download/stateprim_0.1.0_linux_amd64.tar.gz | tar xz
+curl -sL https://github.com/propifly/primkit/releases/latest/download/knowledgeprim_0.1.0_linux_amd64.tar.gz | tar xz
 
 # Linux (ARM64 / Raspberry Pi)
 curl -sL https://github.com/propifly/primkit/releases/latest/download/taskprim_0.1.0_linux_arm64.tar.gz | tar xz
 curl -sL https://github.com/propifly/primkit/releases/latest/download/stateprim_0.1.0_linux_arm64.tar.gz | tar xz
+curl -sL https://github.com/propifly/primkit/releases/latest/download/knowledgeprim_0.1.0_linux_arm64.tar.gz | tar xz
 ```
 
 Move to your PATH:
 
 ```bash
-sudo mv taskprim stateprim /usr/local/bin/
+sudo mv taskprim stateprim knowledgeprim /usr/local/bin/
 ```
 
 Or use `gh`:
@@ -146,7 +176,7 @@ Requires [Go 1.22+](https://go.dev/dl/):
 git clone https://github.com/propifly/primkit.git
 cd primkit
 make build
-# Binaries: bin/taskprim, bin/stateprim
+# Binaries: bin/taskprim, bin/stateprim, bin/knowledgeprim
 ```
 
 ## Quick Start
@@ -187,6 +217,24 @@ stateprim append audit '{"action":"deploy","version":"1.2.3"}'
 stateprim query audit --since 24h --format json
 ```
 
+### knowledgeprim
+
+```bash
+# Capture a knowledge entity (auto-creates ~/.knowledgeprim/default.db)
+knowledgeprim capture --type concept --title "Eventual consistency" \
+  --body "A consistency model where replicas converge over time" --source agent
+
+# Search for it
+knowledgeprim search "consistency models"
+
+# Connect two entities
+knowledgeprim connect --source e_abc --target e_def --relationship relates_to \
+  --context "Both deal with distributed state"
+
+# Traverse from an entity
+knowledgeprim related e_abc --depth 2
+```
+
 ## Agent Quick Start
 
 Three commands to verify the install:
@@ -209,11 +257,18 @@ stateprim set test hello '"world"'
 stateprim get test hello
 ```
 
+For knowledgeprim:
+
+```bash
+knowledgeprim capture --type test --title "Hello world" --source agent
+knowledgeprim search "hello"
+```
+
 No config file needed. The database is created automatically on first use.
 
 ## HTTP API
 
-Both primitives can run as HTTP servers:
+All three primitives can run as HTTP servers:
 
 ```bash
 # taskprim on port 8090
@@ -221,6 +276,9 @@ taskprim serve --port 8090
 
 # stateprim on port 8091
 stateprim serve --port 8091
+
+# knowledgeprim on port 8092
+knowledgeprim serve --port 8092
 ```
 
 <details>
@@ -261,6 +319,28 @@ stateprim serve --port 8091
 
 </details>
 
+<details>
+<summary><strong>knowledgeprim endpoints</strong></summary>
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `POST` | `/v1/entities` | Capture an entity |
+| `GET` | `/v1/entities/{id}` | Get an entity with edges |
+| `PATCH` | `/v1/entities/{id}` | Update entity fields |
+| `DELETE` | `/v1/entities/{id}` | Delete entity and edges |
+| `GET` | `/v1/search` | Search (hybrid, FTS, or vector) |
+| `GET` | `/v1/entities/{id}/related` | Graph traversal |
+| `POST` | `/v1/edges` | Create an edge |
+| `PATCH` | `/v1/edges/{source}/{target}/{rel}` | Update edge |
+| `POST` | `/v1/edges/{source}/{target}/{rel}/strengthen` | Increment weight |
+| `DELETE` | `/v1/edges/{source}/{target}/{rel}` | Delete edge |
+| `GET` | `/v1/discover` | Discovery (orphans, clusters, bridges) |
+| `GET` | `/v1/types` | List entity types |
+| `GET` | `/v1/relationships` | List relationship types |
+| `GET` | `/v1/stats` | Aggregate stats |
+
+</details>
+
 ### Authentication
 
 When auth keys are configured, all API requests require a Bearer token:
@@ -274,16 +354,18 @@ curl -H "Authorization: Bearer tp_sk_your_key_here" \
 
 > **When to use MCP vs CLI:** If your agent has shell access (Claude Code, Codex, terminal-based agents), the CLI is the simplest and most reliable option — agents are trained on CLI tools and can pipe, chain, and compose them naturally. MCP is ideal for IDE integrations (Claude Desktop, Cursor, VS Code) where there's no terminal access.
 
-Both primitives can run as MCP servers for direct AI agent integration:
+All three primitives can run as MCP servers for direct AI agent integration:
 
 ```bash
 # stdio transport (local agent on same machine)
 taskprim mcp --transport stdio
 stateprim mcp --transport stdio
+knowledgeprim mcp --transport stdio
 
 # SSE transport (remote agent over HTTP)
 taskprim mcp --transport sse --port 8091
 stateprim mcp --transport sse --port 8092
+knowledgeprim mcp --transport sse --port 8093
 ```
 
 ### Claude Code configuration
@@ -299,6 +381,10 @@ Add to your project's `.mcp.json`:
     },
     "stateprim": {
       "command": "stateprim",
+      "args": ["mcp", "--transport", "stdio"]
+    },
+    "knowledgeprim": {
+      "command": "knowledgeprim",
       "args": ["mcp", "--transport", "stdio"]
     }
   }
@@ -321,6 +407,10 @@ Add to your `claude_desktop_config.json`:
     "stateprim": {
       "command": "/usr/local/bin/stateprim",
       "args": ["mcp", "--transport", "stdio"]
+    },
+    "knowledgeprim": {
+      "command": "/usr/local/bin/knowledgeprim",
+      "args": ["mcp", "--transport", "stdio"]
     }
   }
 }
@@ -332,6 +422,8 @@ Add to your `claude_desktop_config.json`:
 **taskprim** (11 tools): `taskprim_add`, `taskprim_list`, `taskprim_get`, `taskprim_done`, `taskprim_kill`, `taskprim_edit`, `taskprim_seen`, `taskprim_label_clear`, `taskprim_labels`, `taskprim_lists`, `taskprim_stats`
 
 **stateprim** (10 tools): `stateprim_set`, `stateprim_get`, `stateprim_has`, `stateprim_set_if_new`, `stateprim_append`, `stateprim_delete`, `stateprim_query`, `stateprim_purge`, `stateprim_namespaces`, `stateprim_stats`
+
+**knowledgeprim** (14 tools): `knowledgeprim_capture`, `knowledgeprim_search`, `knowledgeprim_get`, `knowledgeprim_related`, `knowledgeprim_connect`, `knowledgeprim_strengthen`, `knowledgeprim_edge_edit`, `knowledgeprim_disconnect`, `knowledgeprim_edit`, `knowledgeprim_delete`, `knowledgeprim_discover`, `knowledgeprim_types`, `knowledgeprim_relationships`, `knowledgeprim_stats`
 
 </details>
 
@@ -360,16 +452,17 @@ Every config value can be overridden with environment variables:
 |----------|-----------|
 | `TASKPRIM_DB` | `storage.db` (for taskprim) |
 | `STATEPRIM_DB` | `storage.db` (for stateprim) |
+| `KNOWLEDGEPRIM_DB` | `storage.db` (for knowledgeprim) |
 | `TASKPRIM_LIST` | Default list for new tasks |
 
 ### Global flags
 
-Both binaries accept:
+All three binaries accept:
 
 ```
 --db <path>        Path to SQLite database
 --config <path>    Path to config file
---format <fmt>     Output format: table (default), json, quiet
+--format <fmt>     Output format: text (default), json
 ```
 
 <details>
@@ -382,7 +475,7 @@ primkit/
 │   ├── config/               #   YAML + env var config loader
 │   ├── db/                   #   SQLite (WAL mode) + migration runner
 │   ├── mcp/                  #   MCP server scaffold
-│   ├── replicate/             #   Litestream WAL replication wrapper
+│   ├── replicate/            #   Litestream WAL replication wrapper
 │   └── server/               #   HTTP server, middleware, JSON helpers
 ├── taskprim/                 # Task management primitive
 │   ├── cmd/taskprim/         #   Binary entrypoint
@@ -400,7 +493,16 @@ primkit/
 │       ├── cli/              #   Cobra commands (14 commands)
 │       ├── api/              #   HTTP API handler
 │       └── mcpserver/        #   MCP tool registrations
-├── go.work                   # Go workspace (3 modules)
+├── knowledgeprim/            # Knowledge graph primitive
+│   ├── cmd/knowledgeprim/    #   Binary entrypoint
+│   └── internal/
+│       ├── model/            #   Entity, Edge, SearchFilter, TraversalOpts
+│       ├── store/            #   Store interface + SQLite impl (FTS5, vectors)
+│       ├── embed/            #   Embedding provider (Gemini, OpenAI, custom)
+│       ├── cli/              #   Cobra commands (19 commands)
+│       ├── api/              #   HTTP API handler
+│       └── mcpserver/        #   MCP tool registrations
+├── go.work                   # Go workspace (4 modules)
 ├── Makefile                  # build, test, lint, fmt, tidy, build-pi
 └── config.example.yaml       # Configuration template
 ```
@@ -416,8 +518,8 @@ primkit/
 ### Build & test
 
 ```bash
-make build          # Build both binaries
-make test           # Run all tests (322 tests across 3 modules)
+make build          # Build all three binaries
+make test           # Run all tests (348 tests across 4 modules)
 make lint           # Run go vet on all modules
 make fmt            # Format all code
 make tidy           # Tidy all go.mod files
@@ -433,6 +535,7 @@ make test
 # Single module
 cd taskprim && go test -v ./...
 cd stateprim && go test -v ./...
+cd knowledgeprim && go test -v ./...
 cd primkit && go test -v ./...
 ```
 
@@ -444,17 +547,21 @@ Tests use **in-memory SQLite** — no disk I/O, no cleanup, fast and isolated.
 |----------|-----------|
 | **Pure Go SQLite** (`modernc.org/sqlite`) | No CGo = simpler cross-compilation for ARM (Raspberry Pi) |
 | **Embedded migrations** (`embed.FS`) | Single binary, no external SQL files to ship |
-| **Go workspace** (`go.work`) | Three modules share code without publishing packages |
+| **Go workspace** (`go.work`) | Four modules share code without publishing packages |
 | **Interface-based store** | CLI, API, and MCP are sibling consumers of the same contract |
 | **In-memory SQLite for tests** | Catches real SQL bugs that mocks would miss |
 | **Cobra for CLI** | De facto Go CLI standard, good completions and help |
 | **CLI-first design** | Agents with shell access prefer CLI over MCP — trained on man pages, composable with pipes |
+| **FTS5 + vectors in SQLite** | No external search engine needed — hybrid retrieval in a single file |
+| **Optional embedding** | knowledgeprim works without vectors (FTS5 search, manual edges, discovery all work) |
+| **Contextualized edges** | Edges store *why* things connect, not just *that* they connect |
 
 ## Roadmap
 
 - [x] Shared foundation (config, db, auth, server, mcp scaffold)
 - [x] taskprim (model, store, CLI, HTTP API, MCP)
 - [x] stateprim (model, store, CLI, HTTP API, MCP)
+- [x] knowledgeprim (entities, edges, FTS5 + vector search, discovery, CLI, HTTP API, MCP)
 - [x] Litestream replication to object storage (S3, R2, B2, GCS)
 - [x] GitHub Actions CI pipeline
 - [x] Pre-built binaries (GoReleaser)

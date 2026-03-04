@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+- **knowledgeprim**: Knowledge graph primitive — CLI, HTTP API, MCP server
+  - Typed entities with freeform properties and source tracking
+  - Weighted, contextualized edges (store *why* things connect)
+  - Hybrid search: FTS5 (BM25) + vector (cosine) + Reciprocal Rank Fusion
+  - Graph traversal with depth, direction, and weight filters
+  - Discovery operations: orphans, clusters, bridges, temporal patterns, weak edges
+  - Optional vector embedding via Gemini, OpenAI, or any OpenAI-compatible endpoint
+  - Auto-connect: new entities automatically linked to semantically similar ones
+  - Export/import for data portability
+
 ## [v0.1.0] - 2026-03-04
 
 ### Added

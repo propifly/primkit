@@ -1,11 +1,12 @@
 # Primkit configuration file.
-# Both taskprim and stateprim read this format. Copy to config.yaml and edit.
+# All three primitives (taskprim, stateprim, knowledgeprim) read this format.
+# Copy to config.yaml and edit. Each primitive uses its own config file.
 # Environment variables override any value here (see docs for prefix rules).
 # Use ${ENV_VAR} syntax for secrets — they're interpolated at startup.
 
 storage:
   # Path to the SQLite database file. Created automatically if it doesn't exist.
-  # Override: TASKPRIM_DB or STATEPRIM_DB
+  # Override: TASKPRIM_DB, STATEPRIM_DB, or KNOWLEDGEPRIM_DB
   db: ~/.taskprim/default.db
 
   # Litestream replication (optional). Embeds Litestream as a Go library —
@@ -29,13 +30,35 @@ auth:
   #   name: "johanna"         # identifies task source in API mode
   # - key: "sp_sk_your_api_key_here"
   #   name: "johanna"
+  # - key: "kp_sk_your_api_key_here"
+  #   name: "thomas"
 
 # HTTP server settings (serve mode and MCP SSE transport).
 server:
-  port: 8090                  # taskprim default; stateprim typically uses 8091
+  port: 8090                  # taskprim: 8090, stateprim: 8091, knowledgeprim: 8092
 
 # taskprim-specific settings.
 taskprim:
   # Default list for new tasks when --list is omitted.
   # Override: TASKPRIM_LIST env var.
   default_list: ""
+
+# knowledgeprim-specific settings (ignored by taskprim and stateprim).
+
+# Vector embedding (optional). When configured, knowledgeprim generates embeddings
+# on capture and enables vector and hybrid search modes.
+# Without embedding, FTS5 search, manual edges, and discovery still work.
+embedding:
+  provider: ""                # gemini | openai | custom (empty = disabled)
+  # model: text-embedding-004           # Gemini
+  # model: text-embedding-3-small       # OpenAI
+  # dimensions: 768                     # must match model output
+  # api_key: ${EMBEDDING_API_KEY}
+  # endpoint: ""                        # custom endpoint for local models
+
+# Auto-connect (optional). When embedding is enabled, new entities are
+# automatically linked to semantically similar existing entities on capture.
+auto_connect:
+  enabled: true
+  threshold: 0.35             # cosine distance (lower = more similar)
+  max_connections: 10         # max auto-connections per capture
