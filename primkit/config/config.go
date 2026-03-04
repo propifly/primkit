@@ -34,12 +34,12 @@ type StorageConfig struct {
 // ReplicateConfig controls Litestream replication to object storage.
 // When enabled, WAL frames are continuously streamed to the target.
 type ReplicateConfig struct {
-	Enabled        bool   `yaml:"enabled"`
-	Provider       string `yaml:"provider"`        // r2, s3, b2, gcs
-	Bucket         string `yaml:"bucket"`
-	Path           string `yaml:"path"`
-	Endpoint       string `yaml:"endpoint"`         // required for R2
-	AccessKeyID    string `yaml:"access_key_id"`
+	Enabled         bool   `yaml:"enabled"`
+	Provider        string `yaml:"provider"` // r2, s3, b2, gcs
+	Bucket          string `yaml:"bucket"`
+	Path            string `yaml:"path"`
+	Endpoint        string `yaml:"endpoint"` // required for R2
+	AccessKeyID     string `yaml:"access_key_id"`
 	SecretAccessKey string `yaml:"secret_access_key"`
 }
 

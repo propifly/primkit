@@ -13,9 +13,9 @@ import (
 	"os"
 	"time"
 
-	"github.com/propifly/primkit/primkit/config"
 	"github.com/benbjohnson/litestream"
 	lss3 "github.com/benbjohnson/litestream/s3"
+	"github.com/propifly/primkit/primkit/config"
 )
 
 // Replicator manages Litestream replication for a single SQLite database.

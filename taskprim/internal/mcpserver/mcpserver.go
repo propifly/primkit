@@ -108,7 +108,7 @@ func registerAddTool(srv *mcpsvr.MCPServer, s store.Store) {
 			What:      what,
 			List:      list,
 			Source:    source,
-			Labels:   labels,
+			Labels:    labels,
 			WaitingOn: waitingOn,
 			ParentID:  parentID,
 			Context:   taskCtx,

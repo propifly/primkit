@@ -6,10 +6,10 @@ import (
 	"fmt"
 	"testing"
 
+	mcpsvr "github.com/mark3labs/mcp-go/server"
 	"github.com/propifly/primkit/primkit/db"
 	"github.com/propifly/primkit/taskprim/internal/model"
 	"github.com/propifly/primkit/taskprim/internal/store"
-	mcpsvr "github.com/mark3labs/mcp-go/server"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

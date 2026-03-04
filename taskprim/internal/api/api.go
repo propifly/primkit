@@ -99,7 +99,7 @@ func (h *Handler) createTask(w http.ResponseWriter, r *http.Request) {
 		List:      req.List,
 		What:      req.What,
 		Source:    source,
-		Labels:   req.Labels,
+		Labels:    req.Labels,
 		WaitingOn: req.WaitingOn,
 		ParentID:  req.ParentID,
 		Context:   req.Context,

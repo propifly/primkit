@@ -40,11 +40,11 @@ func TestNew_NilLogger_UsesDefault(t *testing.T) {
 
 func TestNewS3Client_R2(t *testing.T) {
 	rep := New(config.ReplicateConfig{
-		Provider:       "r2",
-		Bucket:         "my-bucket",
-		Path:           "db/taskprim.db",
-		Endpoint:       "https://abc123.r2.cloudflarestorage.com",
-		AccessKeyID:    "access-key",
+		Provider:        "r2",
+		Bucket:          "my-bucket",
+		Path:            "db/taskprim.db",
+		Endpoint:        "https://abc123.r2.cloudflarestorage.com",
+		AccessKeyID:     "access-key",
 		SecretAccessKey: "secret-key",
 	}, nil)
 
@@ -59,10 +59,10 @@ func TestNewS3Client_R2(t *testing.T) {
 
 func TestNewS3Client_S3(t *testing.T) {
 	rep := New(config.ReplicateConfig{
-		Provider:       "s3",
-		Bucket:         "my-s3-bucket",
-		Path:           "backups/db",
-		AccessKeyID:    "aws-key",
+		Provider:        "s3",
+		Bucket:          "my-s3-bucket",
+		Path:            "backups/db",
+		AccessKeyID:     "aws-key",
 		SecretAccessKey: "aws-secret",
 	}, nil)
 
@@ -74,10 +74,10 @@ func TestNewS3Client_S3(t *testing.T) {
 
 func TestNewS3Client_B2(t *testing.T) {
 	rep := New(config.ReplicateConfig{
-		Provider:       "b2",
-		Bucket:         "b2-bucket",
-		Endpoint:       "https://s3.us-west-001.backblazeb2.com",
-		AccessKeyID:    "b2-key",
+		Provider:        "b2",
+		Bucket:          "b2-bucket",
+		Endpoint:        "https://s3.us-west-001.backblazeb2.com",
+		AccessKeyID:     "b2-key",
 		SecretAccessKey: "b2-secret",
 	}, nil)
 
