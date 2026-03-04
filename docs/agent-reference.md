@@ -4,6 +4,43 @@ Structured reference for AI agents using primkit primitives. All commands, flags
 
 For human-readable guides, see the [README](../README.md) and [knowledgeprim Guide](knowledgeprim.md). For configuration, see [configuration](configuration.md).
 
+## Install
+
+Install only the primitives you need. Each is a standalone binary.
+
+**From GitHub releases (pre-built):**
+
+```bash
+# Detect platform
+OS=$(uname -s | tr '[:upper:]' '[:lower:]')
+ARCH=$(uname -m); [[ "$ARCH" == "x86_64" ]] && ARCH="amd64"
+
+# Install all three (or pick the ones you need)
+for bin in taskprim stateprim knowledgeprim; do
+  curl -sL "https://github.com/propifly/primkit/releases/latest/download/${bin}_0.1.0_${OS}_${ARCH}.tar.gz" | tar xz
+done
+sudo mv taskprim stateprim knowledgeprim /usr/local/bin/
+```
+
+**From source (requires Go 1.22+):**
+
+```bash
+git clone https://github.com/propifly/primkit.git && cd primkit && make build
+# Binaries: bin/taskprim, bin/stateprim, bin/knowledgeprim
+```
+
+**Verify:**
+
+```bash
+taskprim --help
+stateprim --help
+knowledgeprim --help
+```
+
+No configuration required. Databases auto-create on first use at `~/<primitive>/default.db`.
+
+---
+
 ## Global Flags (all primitives)
 
 | Flag | Type | Default | Description |
