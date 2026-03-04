@@ -46,14 +46,24 @@ type Store interface {
 	ExportEntities(ctx context.Context, filter *model.ExportFilter) (*model.ExportData, error)
 	ImportEntities(ctx context.Context, data *model.ExportData) error
 
+	// Embedding metadata.
+	GetEmbeddingMeta(ctx context.Context) (*model.EmbeddingMeta, error)
+	SetEmbeddingMeta(ctx context.Context, meta *model.EmbeddingMeta) error
+
+	// Embedding maintenance.
+	StripVectors(ctx context.Context) error
+	UpdateEntityVector(ctx context.Context, entityID string, embedding []float32) error
+
 	// Lifecycle.
 	Close() error
 }
 
 // Error sentinels.
 var (
-	ErrNotFound      = errors.New("entity not found")
-	ErrEdgeNotFound  = errors.New("edge not found")
-	ErrEdgeExists    = errors.New("edge already exists")
-	ErrInvalidEntity = errors.New("invalid entity")
+	ErrNotFound           = errors.New("entity not found")
+	ErrEdgeNotFound       = errors.New("edge not found")
+	ErrEdgeExists         = errors.New("edge already exists")
+	ErrInvalidEntity      = errors.New("invalid entity")
+	ErrEmbeddingMismatch  = errors.New("embedding model mismatch")
+	ErrNoEmbeddingMeta    = errors.New("no embedding metadata")
 )

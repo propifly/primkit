@@ -13,6 +13,7 @@ func newSearchCmd() *cobra.Command {
 		entityType string
 		limit      int
 		mode       string
+		force      bool
 	)
 
 	cmd := &cobra.Command{
@@ -44,6 +45,12 @@ func newSearchCmd() *cobra.Command {
 				if embedder == nil {
 					return fmt.Errorf("vector search requires an embedding provider (configure in config.yaml)")
 				}
+				// Check embedding model compatibility unless --force.
+				if !force {
+					if compatErr := checkEmbeddingCompat(cmd, s, embedder); compatErr != nil {
+						return compatErr
+					}
+				}
 				embedding, embErr := embedder.Embed(cmd.Context(), query)
 				if embErr != nil {
 					return fmt.Errorf("embedding query: %w", embErr)
@@ -52,6 +59,12 @@ func newSearchCmd() *cobra.Command {
 			default: // hybrid
 				var embedding []float32
 				if embedder != nil {
+					// Check embedding model compatibility unless --force.
+					if !force {
+						if compatErr := checkEmbeddingCompat(cmd, s, embedder); compatErr != nil {
+							return compatErr
+						}
+					}
 					embedding, _ = embedder.Embed(cmd.Context(), query)
 				}
 				results, err = s.SearchHybrid(cmd.Context(), query, embedding, filter)
@@ -68,6 +81,7 @@ func newSearchCmd() *cobra.Command {
 	cmd.Flags().StringVar(&entityType, "type", "", "filter by entity type")
 	cmd.Flags().IntVar(&limit, "limit", 20, "max results")
 	cmd.Flags().StringVar(&mode, "mode", "hybrid", "search mode: hybrid, fts, vector")
+	cmd.Flags().BoolVar(&force, "force", false, "bypass embedding model mismatch check")
 
 	return cmd
 }

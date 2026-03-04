@@ -213,8 +213,8 @@ Knowledge graph with typed entities, weighted edges, and hybrid search.
 
 | Command | Args | Required Flags | Optional Flags |
 |---------|------|---------------|----------------|
-| `capture` | — | `--type`, `--title` | `--body`, `--url`, `--source` (default: hostname), `--properties` (JSON), `--no-auto-connect`, `--threshold` (0.35) |
-| `search <query>` | search text | — | `--type`, `--limit` (20), `--mode` (hybrid/fts/vector) |
+| `capture` | — | `--type`, `--title` | `--body`, `--url`, `--source` (default: hostname), `--properties` (JSON), `--no-auto-connect`, `--threshold` (0.35), `--force` |
+| `search <query>` | search text | — | `--type`, `--limit` (20), `--mode` (hybrid/fts/vector), `--force` |
 | `get <id>` | entity ID | — | — |
 | `edit <id>` | entity ID | — | `--title`, `--body`, `--properties` |
 | `delete <id>` | entity ID | — | — |
@@ -229,6 +229,8 @@ Knowledge graph with typed entities, weighted edges, and hybrid search.
 | `stats` | — | — | — |
 | `export` | — | — | `--type` |
 | `import` | — | — | — |
+| `re-embed` | — | — | — |
+| `strip-vectors` | — | — | `--confirm` |
 | `restore` | — | — | `--timestamp`, `--source` |
 
 ### JSON Schemas
@@ -327,6 +329,8 @@ Knowledge graph with typed entities, weighted edges, and hybrid search.
 | `disconnect` | Yes | Deleting non-existent edge is a no-op |
 | `edit` | Yes | Same edit applied twice produces same result |
 | `delete` | Yes | Deleting non-existent entity is a no-op |
+| `re-embed` | No | Re-generates all vectors with current provider. Expensive (API calls per entity) |
+| `strip-vectors` | Yes | Deleting already-empty vectors is a no-op |
 
 ### Search Mode Decision Tree
 
@@ -382,6 +386,7 @@ All primitives return non-zero exit codes on error. Error messages go to stderr.
 | `"relationship is required"` | Missing `--relationship` on connect | Add `--relationship <rel>` |
 | `"self-edges are not allowed"` | Source and target are the same entity | Use different entity IDs |
 | `"vector search requires an embedding provider"` | Used `--mode vector` without embedding config | Configure embedding in config.yaml or use `--mode fts` |
+| `"embedding model mismatch"` | Configured embedding provider differs from what's in the db | Use `--mode fts`, run `re-embed`, match config to db, or pass `--force` |
 | `"entity not found"` | Entity ID doesn't exist | Verify ID with `search` or `types` |
 | `"database is locked"` | Another process holds the SQLite lock | Retry after a short delay (SQLite busy timeout handles most cases) |
 | `"list is required"` | taskprim `add` without `--list` | Add `--list <list>` |

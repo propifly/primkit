@@ -536,3 +536,195 @@ func TestFloat32Roundtrip(t *testing.T) {
 	restored := bytesToFloat32s(bytes)
 	assert.Equal(t, original, restored)
 }
+
+// ---------------------------------------------------------------------------
+// Embedding metadata tests
+// ---------------------------------------------------------------------------
+
+func TestGetEmbeddingMetaEmpty(t *testing.T) {
+	s := newTestStore(t)
+	_, err := s.GetEmbeddingMeta(context.Background())
+	assert.ErrorIs(t, err, ErrNoEmbeddingMeta)
+}
+
+func TestSetAndGetEmbeddingMeta(t *testing.T) {
+	s := newTestStore(t)
+	ctx := context.Background()
+
+	meta := &model.EmbeddingMeta{
+		Provider:   "openai",
+		Model:      "text-embedding-3-small",
+		Dimensions: 1536,
+	}
+	require.NoError(t, s.SetEmbeddingMeta(ctx, meta))
+
+	got, err := s.GetEmbeddingMeta(ctx)
+	require.NoError(t, err)
+	assert.Equal(t, "openai", got.Provider)
+	assert.Equal(t, "text-embedding-3-small", got.Model)
+	assert.Equal(t, 1536, got.Dimensions)
+	assert.False(t, got.CreatedAt.IsZero())
+}
+
+func TestSetEmbeddingMetaOverwrites(t *testing.T) {
+	s := newTestStore(t)
+	ctx := context.Background()
+
+	require.NoError(t, s.SetEmbeddingMeta(ctx, &model.EmbeddingMeta{
+		Provider: "openai", Model: "text-embedding-3-small", Dimensions: 1536,
+	}))
+	require.NoError(t, s.SetEmbeddingMeta(ctx, &model.EmbeddingMeta{
+		Provider: "gemini", Model: "text-embedding-004", Dimensions: 768,
+	}))
+
+	got, err := s.GetEmbeddingMeta(ctx)
+	require.NoError(t, err)
+	assert.Equal(t, "gemini", got.Provider)
+	assert.Equal(t, "text-embedding-004", got.Model)
+	assert.Equal(t, 768, got.Dimensions)
+}
+
+func TestCheckEmbeddingMetaNoMeta(t *testing.T) {
+	s := newTestStore(t)
+	// No metadata set → should pass (first embed will set it).
+	err := s.CheckEmbeddingMeta(context.Background(), "openai", "text-embedding-3-small", 1536)
+	assert.NoError(t, err)
+}
+
+func TestCheckEmbeddingMetaMatch(t *testing.T) {
+	s := newTestStore(t)
+	ctx := context.Background()
+
+	require.NoError(t, s.SetEmbeddingMeta(ctx, &model.EmbeddingMeta{
+		Provider: "openai", Model: "text-embedding-3-small", Dimensions: 1536,
+	}))
+
+	// Same provider and model → pass.
+	err := s.CheckEmbeddingMeta(ctx, "openai", "text-embedding-3-small", 1536)
+	assert.NoError(t, err)
+}
+
+func TestCheckEmbeddingMetaMismatch(t *testing.T) {
+	s := newTestStore(t)
+	ctx := context.Background()
+
+	require.NoError(t, s.SetEmbeddingMeta(ctx, &model.EmbeddingMeta{
+		Provider: "openai", Model: "text-embedding-3-small", Dimensions: 1536,
+	}))
+
+	// Different provider → mismatch.
+	err := s.CheckEmbeddingMeta(ctx, "gemini", "text-embedding-004", 768)
+	assert.ErrorIs(t, err, ErrEmbeddingMismatch)
+
+	// Same provider, different model → mismatch.
+	err = s.CheckEmbeddingMeta(ctx, "openai", "text-embedding-3-large", 3072)
+	assert.ErrorIs(t, err, ErrEmbeddingMismatch)
+}
+
+func TestEnsureEmbeddingMetaSetsOnce(t *testing.T) {
+	s := newTestStore(t)
+	ctx := context.Background()
+
+	// First call sets metadata.
+	require.NoError(t, s.EnsureEmbeddingMeta(ctx, "openai", "text-embedding-3-small", 1536))
+
+	got, err := s.GetEmbeddingMeta(ctx)
+	require.NoError(t, err)
+	assert.Equal(t, "openai", got.Provider)
+
+	// Second call is a no-op (doesn't overwrite).
+	require.NoError(t, s.EnsureEmbeddingMeta(ctx, "gemini", "text-embedding-004", 768))
+
+	got, err = s.GetEmbeddingMeta(ctx)
+	require.NoError(t, err)
+	assert.Equal(t, "openai", got.Provider) // Still openai.
+}
+
+func TestStripVectors(t *testing.T) {
+	s := newTestStore(t)
+	ctx := context.Background()
+
+	// Create entity with embedding.
+	entity := &model.Entity{Type: "concept", Title: "Test", Source: "test"}
+	require.NoError(t, s.CaptureEntity(ctx, entity, []float32{0.1, 0.2, 0.3}))
+
+	// Set metadata.
+	require.NoError(t, s.SetEmbeddingMeta(ctx, &model.EmbeddingMeta{
+		Provider: "openai", Model: "text-embedding-3-small", Dimensions: 1536,
+	}))
+
+	// Verify vectors and meta exist.
+	stats, err := s.Stats(ctx)
+	require.NoError(t, err)
+	assert.Equal(t, 1, stats.VectorCount)
+
+	_, err = s.GetEmbeddingMeta(ctx)
+	require.NoError(t, err)
+
+	// Strip.
+	require.NoError(t, s.StripVectors(ctx))
+
+	// Verify everything is gone.
+	stats, err = s.Stats(ctx)
+	require.NoError(t, err)
+	assert.Equal(t, 0, stats.VectorCount)
+
+	_, err = s.GetEmbeddingMeta(ctx)
+	assert.ErrorIs(t, err, ErrNoEmbeddingMeta)
+
+	// Entity still exists.
+	assert.Equal(t, 1, stats.EntityCount)
+}
+
+func TestUpdateEntityVector(t *testing.T) {
+	s := newTestStore(t)
+	ctx := context.Background()
+
+	// Create entity without embedding.
+	entity := &model.Entity{Type: "concept", Title: "Test", Source: "test"}
+	require.NoError(t, s.CaptureEntity(ctx, entity, nil))
+
+	stats, _ := s.Stats(ctx)
+	assert.Equal(t, 0, stats.VectorCount)
+
+	// Add vector.
+	require.NoError(t, s.UpdateEntityVector(ctx, entity.ID, []float32{0.1, 0.2, 0.3}))
+
+	stats, _ = s.Stats(ctx)
+	assert.Equal(t, 1, stats.VectorCount)
+
+	// Update vector (replace).
+	require.NoError(t, s.UpdateEntityVector(ctx, entity.ID, []float32{0.4, 0.5, 0.6}))
+
+	stats, _ = s.Stats(ctx)
+	assert.Equal(t, 1, stats.VectorCount) // Still 1, not 2.
+
+	// Vector search should find it with the new embedding.
+	results, err := s.SearchVector(ctx, []float32{0.4, 0.5, 0.6}, nil)
+	require.NoError(t, err)
+	require.Equal(t, 1, len(results))
+	assert.Equal(t, entity.ID, results[0].Entity.ID)
+}
+
+func TestStripVectorsEmptyDB(t *testing.T) {
+	s := newTestStore(t)
+	// Should not fail on empty database.
+	require.NoError(t, s.StripVectors(context.Background()))
+}
+
+func TestFTSWorksAfterStripVectors(t *testing.T) {
+	s := newTestStore(t)
+	ctx := context.Background()
+
+	body := "knowledge graph with vector embeddings"
+	entity := &model.Entity{Type: "article", Title: "Graph Embeddings", Body: &body, Source: "test"}
+	require.NoError(t, s.CaptureEntity(ctx, entity, []float32{0.1, 0.2, 0.3}))
+
+	require.NoError(t, s.StripVectors(ctx))
+
+	// FTS should still work.
+	results, err := s.SearchFTS(ctx, "knowledge graph", nil)
+	require.NoError(t, err)
+	assert.Equal(t, 1, len(results))
+	assert.Equal(t, entity.ID, results[0].Entity.ID)
+}

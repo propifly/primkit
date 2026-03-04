@@ -40,6 +40,8 @@ func NewGemini(cfg Config) (*GeminiEmbedder, error) {
 }
 
 func (g *GeminiEmbedder) Dimensions() int { return g.dimensions }
+func (g *GeminiEmbedder) Provider() string  { return "gemini" }
+func (g *GeminiEmbedder) Model() string     { return g.model }
 
 func (g *GeminiEmbedder) Embed(ctx context.Context, text string) ([]float32, error) {
 	url := fmt.Sprintf(

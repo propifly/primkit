@@ -19,6 +19,7 @@ func newCaptureCmd() *cobra.Command {
 		properties    string
 		noAutoConnect bool
 		threshold     float64
+		force         bool
 	)
 
 	cmd := &cobra.Command{
@@ -53,6 +54,13 @@ connected via auto-connect.
 			// Generate embedding if provider is configured.
 			var embedding []float32
 			if embedder != nil {
+				// Check embedding model compatibility unless --force.
+				if !force {
+					if err := checkEmbeddingCompat(cmd, s, embedder); err != nil {
+						return err
+					}
+				}
+
 				var err error
 				embedding, err = embedder.Embed(cmd.Context(), entity.EmbeddingText())
 				if err != nil {
@@ -62,6 +70,14 @@ connected via auto-connect.
 
 			if err := s.CaptureEntity(cmd.Context(), entity, embedding); err != nil {
 				return fmt.Errorf("capturing entity: %w", err)
+			}
+
+			// Set embedding metadata on first successful embed.
+			if len(embedding) > 0 && embedder != nil {
+				sqlStore, ok := s.(*store.SQLiteStore)
+				if ok {
+					_ = sqlStore.EnsureEmbeddingMeta(cmd.Context(), embedder.Provider(), embedder.Model(), embedder.Dimensions())
+				}
 			}
 
 			// Auto-connect: find similar entities and create edges.
@@ -81,6 +97,7 @@ connected via auto-connect.
 	cmd.Flags().StringVar(&properties, "properties", "", "JSON properties")
 	cmd.Flags().BoolVar(&noAutoConnect, "no-auto-connect", false, "skip auto-connect")
 	cmd.Flags().Float64Var(&threshold, "threshold", 0.35, "auto-connect cosine distance threshold")
+	cmd.Flags().BoolVar(&force, "force", false, "bypass embedding model mismatch check")
 
 	_ = cmd.MarkFlagRequired("type")
 	_ = cmd.MarkFlagRequired("title")
@@ -126,4 +143,14 @@ func autoConnect(cmd *cobra.Command, s store.Store, entityID string, embedding [
 	if connected > 0 && getFormat(cmd) != "json" {
 		fmt.Fprintf(cmd.ErrOrStderr(), "Auto-connected to %d similar entities.\n", connected)
 	}
+}
+
+// checkEmbeddingCompat validates that the current embedder matches the db's
+// stored embedding metadata. Shared by capture and search commands.
+func checkEmbeddingCompat(cmd *cobra.Command, s store.Store, embedder interface{ Provider() string; Model() string; Dimensions() int }) error {
+	sqlStore, ok := s.(*store.SQLiteStore)
+	if !ok {
+		return nil // Non-SQLite stores don't support metadata checks.
+	}
+	return sqlStore.CheckEmbeddingMeta(cmd.Context(), embedder.Provider(), embedder.Model(), embedder.Dimensions())
 }

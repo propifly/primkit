@@ -15,6 +15,12 @@ type Embedder interface {
 
 	// Dimensions returns the expected output dimension count.
 	Dimensions() int
+
+	// Provider returns the provider name (e.g., "openai", "gemini", "custom").
+	Provider() string
+
+	// Model returns the model name (e.g., "text-embedding-3-small").
+	Model() string
 }
 
 // Config holds the embedding provider configuration.

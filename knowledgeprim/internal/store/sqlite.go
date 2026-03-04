@@ -1022,6 +1022,107 @@ func (s *SQLiteStore) ImportEntities(ctx context.Context, data *model.ExportData
 }
 
 // ---------------------------------------------------------------------------
+// Embedding metadata
+// ---------------------------------------------------------------------------
+
+func (s *SQLiteStore) GetEmbeddingMeta(ctx context.Context) (*model.EmbeddingMeta, error) {
+	var meta model.EmbeddingMeta
+	var createdAt string
+
+	err := s.db.QueryRowContext(ctx,
+		`SELECT provider, model, dimensions, created_at FROM embedding_meta WHERE id = 1`,
+	).Scan(&meta.Provider, &meta.Model, &meta.Dimensions, &createdAt)
+	if err == sql.ErrNoRows {
+		return nil, ErrNoEmbeddingMeta
+	}
+	if err != nil {
+		return nil, fmt.Errorf("querying embedding meta: %w", err)
+	}
+	meta.CreatedAt, _ = time.Parse(time.RFC3339Nano, createdAt)
+	return &meta, nil
+}
+
+func (s *SQLiteStore) SetEmbeddingMeta(ctx context.Context, meta *model.EmbeddingMeta) error {
+	now := time.Now().UTC()
+	meta.CreatedAt = now
+
+	_, err := s.db.ExecContext(ctx,
+		`INSERT OR REPLACE INTO embedding_meta (id, provider, model, dimensions, created_at)
+		 VALUES (1, ?, ?, ?, ?)`,
+		meta.Provider, meta.Model, meta.Dimensions, now.Format(time.RFC3339Nano),
+	)
+	if err != nil {
+		return fmt.Errorf("setting embedding meta: %w", err)
+	}
+	return nil
+}
+
+func (s *SQLiteStore) StripVectors(ctx context.Context) error {
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("begin tx: %w", err)
+	}
+	defer tx.Rollback()
+
+	if _, err := tx.ExecContext(ctx, `DELETE FROM entity_vectors`); err != nil {
+		return fmt.Errorf("deleting vectors: %w", err)
+	}
+	if _, err := tx.ExecContext(ctx, `DELETE FROM embedding_meta`); err != nil {
+		return fmt.Errorf("deleting embedding meta: %w", err)
+	}
+
+	return tx.Commit()
+}
+
+func (s *SQLiteStore) UpdateEntityVector(ctx context.Context, entityID string, embedding []float32) error {
+	blob := float32sToBytes(embedding)
+	_, err := s.db.ExecContext(ctx,
+		`INSERT OR REPLACE INTO entity_vectors (entity_id, embedding, dimensions)
+		 VALUES (?, ?, ?)`,
+		entityID, blob, len(embedding),
+	)
+	if err != nil {
+		return fmt.Errorf("updating vector: %w", err)
+	}
+	return nil
+}
+
+// CheckEmbeddingMeta validates that the given embedder matches the metadata
+// stored in the database. Returns nil if compatible (match or no meta yet).
+// Returns ErrEmbeddingMismatch with details if incompatible.
+func (s *SQLiteStore) CheckEmbeddingMeta(ctx context.Context, provider, modelName string, dimensions int) error {
+	meta, err := s.GetEmbeddingMeta(ctx)
+	if err == ErrNoEmbeddingMeta {
+		return nil // No metadata yet — first embed will set it.
+	}
+	if err != nil {
+		return err
+	}
+
+	if meta.Provider != provider || meta.Model != modelName {
+		return fmt.Errorf("%w: db uses %s/%s (%dd), config uses %s/%s (%dd). Use --mode fts, run re-embed, or pass --force",
+			ErrEmbeddingMismatch, meta.Provider, meta.Model, meta.Dimensions,
+			provider, modelName, dimensions)
+	}
+
+	return nil
+}
+
+// EnsureEmbeddingMeta sets the embedding metadata if it doesn't exist yet.
+// Called after the first successful embedding is stored.
+func (s *SQLiteStore) EnsureEmbeddingMeta(ctx context.Context, provider, modelName string, dimensions int) error {
+	_, err := s.GetEmbeddingMeta(ctx)
+	if err == ErrNoEmbeddingMeta {
+		return s.SetEmbeddingMeta(ctx, &model.EmbeddingMeta{
+			Provider:   provider,
+			Model:      modelName,
+			Dimensions: dimensions,
+		})
+	}
+	return err // nil if already exists, error if something else went wrong.
+}
+
+// ---------------------------------------------------------------------------
 // Vector helpers
 // ---------------------------------------------------------------------------
 

@@ -16,6 +16,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   - Optional vector embedding via Gemini, OpenAI, or any OpenAI-compatible endpoint
   - Auto-connect: new entities automatically linked to semantically similar ones
   - Export/import for data portability
+  - **Embedding safety**: prevent silent degradation when switching embedding providers
+    - `embedding_meta` table tracks which provider/model produced stored vectors
+    - Mismatch detection on capture and search with clear error messages
+    - `--force` flag to bypass mismatch check when needed
+    - `re-embed` command to migrate all vectors to a new embedding provider
+    - `strip-vectors` command to remove all embeddings and revert to FTS5-only
+    - `Provider()` and `Model()` methods on Embedder interface for identity tracking
 
 ## [v0.1.0] - 2026-03-04
 

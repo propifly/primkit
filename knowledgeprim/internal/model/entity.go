@@ -192,6 +192,16 @@ type Stats struct {
 	DBPath      string `json:"db_path,omitempty"`
 }
 
+// EmbeddingMeta records which embedding provider and model produced the
+// vectors stored in the database. One row per database — the embedding
+// model is a property of the .db file.
+type EmbeddingMeta struct {
+	Provider   string    `json:"provider"`
+	Model      string    `json:"model"`
+	Dimensions int       `json:"dimensions"`
+	CreatedAt  time.Time `json:"created_at"`
+}
+
 // ExportFilter controls which entities to export.
 type ExportFilter struct {
 	Type string `json:"type,omitempty"`

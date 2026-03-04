@@ -47,6 +47,8 @@ func NewOpenAI(cfg Config) (*OpenAIEmbedder, error) {
 }
 
 func (o *OpenAIEmbedder) Dimensions() int { return o.dimensions }
+func (o *OpenAIEmbedder) Provider() string  { return "openai" }
+func (o *OpenAIEmbedder) Model() string     { return o.model }
 
 func (o *OpenAIEmbedder) Embed(ctx context.Context, text string) ([]float32, error) {
 	body := map[string]interface{}{

@@ -315,6 +315,75 @@ knowledgeprim strengthen e_a1b2c3 e_d4e5f6 relates_to
 knowledgeprim related e_a1b2c3 --min-weight 3.0
 ```
 
+## Switching Embedding Providers
+
+Each knowledgeprim database remembers which embedding provider and model generated its vectors. Switching providers (e.g., from Gemini to OpenAI) produces incompatible vectors — Gemini's 768-dimension outputs can't be meaningfully compared against OpenAI's 1536-dimension outputs. Without protection, your vector search would silently return garbage.
+
+knowledgeprim prevents this with an `embedding_meta` record stored in the database. On any `capture` or `search --mode vector/hybrid`, it checks that the configured provider and model match what's already in the database.
+
+### What the Error Looks Like
+
+If you change your embedding config after a database has vectors, the next capture or vector search will fail with:
+
+```
+embedding model mismatch: db uses gemini/text-embedding-004 (768d),
+config uses openai/text-embedding-3-small (1536d).
+Use --mode fts, run re-embed, or pass --force
+```
+
+### Recovery Options
+
+**Option 1: Re-embed with the new provider** (recommended)
+
+Migrates all existing vectors to the new provider. Your search quality will be consistent from the first re-embed forward.
+
+```bash
+# Update config.yaml to point to the new provider, then:
+knowledgeprim re-embed
+```
+
+This calls the new embedding API once per entity. Progress prints every 10 entities. The database's `embedding_meta` record is updated on completion.
+
+**Option 2: Drop back to FTS5-only**
+
+Removes all vectors and metadata. The database becomes FTS5-only until you re-enable embedding with the new provider.
+
+```bash
+knowledgeprim strip-vectors --confirm
+```
+
+After stripping, `capture` will start populating vectors with the new provider on the next run (no re-embed needed for new entities; old entities won't have vectors until you run `re-embed` explicitly).
+
+**Option 3: Search with FTS while you plan the migration**
+
+```bash
+# Temporary read-only workaround — skip vector operations entirely
+knowledgeprim search "your query" --mode fts
+```
+
+**Option 4: Bypass the check (risky)**
+
+```bash
+knowledgeprim capture --type thought --title "..." --force
+```
+
+`--force` writes the entity and its new-provider vector alongside existing old-provider vectors. The database will have mixed-dimension vectors, which produces incorrect cosine distances. Only use this if you are about to run `re-embed` immediately afterward.
+
+### The Safe Migration Sequence
+
+```bash
+# 1. Update embedding.provider/model in config.yaml
+
+# 2. Verify you can reach the new API
+knowledgeprim capture --type thought --title "migration test" --force
+
+# 3. Migrate all existing vectors
+knowledgeprim re-embed
+
+# 4. Confirm
+knowledgeprim stats  # vector_count should equal entity_count
+```
+
 ## Agent Workflows
 
 These examples show end-to-end workflows for different agent types using actual CLI syntax.

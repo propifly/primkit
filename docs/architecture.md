@@ -132,7 +132,7 @@ The Store is the central abstraction. Each primitive defines its own interface i
 | `ImportRecords` | Bulk import preserving keys |
 | `Close` | Release database connection |
 
-### knowledgeprim Store (20 operations)
+### knowledgeprim Store (23 operations)
 
 | Operation | Description |
 |-----------|-------------|
@@ -154,6 +154,10 @@ The Store is the central abstraction. Each primitive defines its own interface i
 | `Stats` | Aggregate counts (entities, edges, vectors, orphans, DB size) |
 | `ExportEntities` | Full export with optional type filter |
 | `ImportEntities` | Bulk import preserving IDs |
+| `GetEmbeddingMeta` | Fetch the stored embedding provider/model metadata for this database |
+| `SetEmbeddingMeta` | Write or overwrite the embedding metadata record |
+| `StripVectors` | Delete all embedding vectors and metadata (reverts to FTS5-only) |
+| `UpdateEntityVector` | Upsert a single entity's embedding vector (used by `re-embed`) |
 | `Close` | Release database connection |
 
 ## Domain Models
@@ -234,7 +238,16 @@ Edge {
     CreatedAt      time.Time        // assigned by store
     UpdatedAt      time.Time        // assigned by store
 }
+
+EmbeddingMeta {
+    Provider   string     // embedding provider name (e.g., "gemini", "openai")
+    Model      string     // model name (e.g., "text-embedding-004")
+    Dimensions int        // vector dimensions produced by this model
+    CreatedAt  time.Time  // when the metadata was first recorded
+}
 ```
+
+`EmbeddingMeta` is a single-row record (enforced by `CHECK (id = 1)` in SQLite) that tracks which embedding provider and model generated the vectors in this database. One row per `.db` file. Used by `CheckEmbeddingMeta` to prevent silent degradation when the configured provider changes.
 
 **Entity types** are freeform strings — agents define their own vocabulary (e.g., `article`, `thought`, `concept`, `pattern`, `observation`, `decision`, `bug`).
 
@@ -315,7 +328,18 @@ Two restore paths:
 
 ## Embedding (knowledgeprim only)
 
-knowledgeprim supports optional vector embeddings for semantic search. The embedding layer is an interface with three providers:
+knowledgeprim supports optional vector embeddings for semantic search. The embedding layer is a pluggable interface:
+
+```go
+type Embedder interface {
+    Embed(ctx context.Context, text string) ([]float32, error)
+    Dimensions() int
+    Provider() string  // "gemini", "openai", or "custom"
+    Model() string     // e.g., "text-embedding-004"
+}
+```
+
+`Provider()` and `Model()` are used by the metadata safety layer to detect provider changes. Three implementations ship out of the box:
 
 | Provider | Model | Dimensions |
 |----------|-------|------------|
@@ -330,6 +354,31 @@ knowledgeprim supports optional vector embeddings for semantic search. The embed
 - Discovery operations
 
 You only lose vector search and auto-connect.
+
+### Embedding Metadata Safety
+
+Each knowledgeprim database stores a single `EmbeddingMeta` row (in the `embedding_meta` table, `CHECK (id = 1)`) recording which provider and model generated the stored vectors. This prevents **silent degradation** when switching embedding providers — old 768-dimension Gemini vectors are incompatible with a new 1536-dimension OpenAI config.
+
+**Flow on `capture` or `search --mode vector/hybrid`:**
+
+```
+CheckEmbeddingMeta(provider, model, dimensions)
+  ├── No meta yet → OK (first embed will call EnsureEmbeddingMeta)
+  ├── Meta matches config → OK
+  └── Meta differs → ErrEmbeddingMismatch with clear message:
+        "db uses gemini/text-embedding-004 (768d),
+         config uses openai/text-embedding-3-small (1536d).
+         Use --mode fts, run re-embed, or pass --force"
+```
+
+**Recovery options:**
+
+| Option | When to use |
+|--------|-------------|
+| `knowledgeprim re-embed` | Switching to a new provider — re-generates all vectors |
+| `knowledgeprim strip-vectors --confirm` | Dropping back to FTS5-only — removes all vectors and metadata |
+| `--force` flag | Bypassing the check temporarily (risky — mixed-dimension vectors in one DB) |
+| `--mode fts` on search | Read-only fallback that skips vector operations entirely |
 
 ### Auto-Connect
 
