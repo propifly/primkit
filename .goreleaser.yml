@@ -1,11 +1,5 @@
 version: 2
 
-before:
-  hooks:
-    - go mod tidy -C primkit
-    - go mod tidy -C taskprim
-    - go mod tidy -C stateprim
-
 builds:
   - id: taskprim
     dir: taskprim
@@ -35,18 +29,12 @@ builds:
 
 archives:
   - id: taskprim
-    builds: [taskprim]
+    ids: [taskprim]
     name_template: "taskprim_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
-    format_overrides:
-      - goos: windows
-        format: zip
 
   - id: stateprim
-    builds: [stateprim]
+    ids: [stateprim]
     name_template: "stateprim_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
-    format_overrides:
-      - goos: windows
-        format: zip
 
 checksum:
   name_template: "checksums.txt"
