@@ -103,6 +103,8 @@ knowledgeprim related e_abc --depth 2 --direction both
 knowledgeprim discover --clusters --bridges
 ```
 
+**[knowledgeprim Guide](docs/knowledgeprim.md)** — entity types, relationship design, edge context patterns, search strategy, discovery workflows, and agent playbooks.
+
 ## Architecture
 
 ```
@@ -568,6 +570,7 @@ Tests use **in-memory SQLite** — no disk I/O, no cleanup, fast and isolated.
 
 ## Documentation
 
+- [knowledgeprim Guide](docs/knowledgeprim.md) — entity types, relationships, edge context, search strategy, discovery, agent workflows
 - [Configuration Reference](docs/configuration.md) — full YAML spec, env var overrides, examples
 - [Architecture](docs/architecture.md) — layered design, store interfaces, data flow, replication
 - [Setup Guide](SETUP.md) — R2/S3 setup, replication testing, MCP configuration
