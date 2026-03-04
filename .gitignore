@@ -1,7 +1,5 @@
-# Binaries
+# Binaries (only in bin/, not the source directories)
 /bin/
-taskprim
-stateprim
 *.exe
 *.exe~
 *.dll

@@ -1,0 +1,12 @@
+storage:
+  db: /tmp/test.db
+  replicate:
+    enabled: false
+
+auth:
+  keys:
+    - key: "tp_sk_testkey123"
+      name: "test-agent"
+
+server:
+  port: 9090

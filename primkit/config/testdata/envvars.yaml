@@ -1,0 +1,10 @@
+storage:
+  db: /tmp/envtest.db
+  replicate:
+    enabled: true
+    provider: r2
+    bucket: test-bucket
+    secret_access_key: ${TEST_SECRET_KEY}
+
+server:
+  port: 8090

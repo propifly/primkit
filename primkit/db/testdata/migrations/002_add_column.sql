@@ -1,0 +1,1 @@
+ALTER TABLE test_items ADD COLUMN priority INTEGER DEFAULT 0;

@@ -1,0 +1,41 @@
+# Primkit configuration file.
+# Both taskprim and stateprim read this format. Copy to config.yaml and edit.
+# Environment variables override any value here (see docs for prefix rules).
+# Use ${ENV_VAR} syntax for secrets — they're interpolated at startup.
+
+storage:
+  # Path to the SQLite database file. Created automatically if it doesn't exist.
+  # Override: TASKPRIM_DB or STATEPRIM_DB
+  db: ~/.taskprim/default.db
+
+  # Litestream replication (optional). Embeds Litestream as a Go library —
+  # no sidecar process needed. Continuously streams WAL frames to object
+  # storage for durability. Runs automatically in serve and MCP modes.
+  # Restore with: taskprim restore --config config.yaml
+  replicate:
+    enabled: false
+    # provider: r2          # r2 | s3 | b2 | gcs
+    # bucket: my-bucket
+    # path: taskprim.db
+    # endpoint: https://<account-id>.r2.cloudflarestorage.com  # required for R2/B2
+    # access_key_id: ${REPLICATE_ACCESS_KEY_ID}
+    # secret_access_key: ${REPLICATE_SECRET_ACCESS_KEY}
+
+# Authentication for serve and MCP SSE modes.
+# CLI mode uses filesystem permissions — no auth needed.
+auth:
+  keys: []
+  # - key: "tp_sk_your_api_key_here"
+  #   name: "johanna"         # identifies task source in API mode
+  # - key: "sp_sk_your_api_key_here"
+  #   name: "johanna"
+
+# HTTP server settings (serve mode and MCP SSE transport).
+server:
+  port: 8090                  # taskprim default; stateprim typically uses 8091
+
+# taskprim-specific settings.
+taskprim:
+  # Default list for new tasks when --list is omitted.
+  # Override: TASKPRIM_LIST env var.
+  default_list: ""

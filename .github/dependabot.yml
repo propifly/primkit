@@ -1,0 +1,33 @@
+version: 2
+updates:
+  - package-ecosystem: gomod
+    directory: /primkit
+    schedule:
+      interval: weekly
+    groups:
+      all:
+        patterns: ["*"]
+
+  - package-ecosystem: gomod
+    directory: /taskprim
+    schedule:
+      interval: weekly
+    groups:
+      all:
+        patterns: ["*"]
+
+  - package-ecosystem: gomod
+    directory: /stateprim
+    schedule:
+      interval: weekly
+    groups:
+      all:
+        patterns: ["*"]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      all:
+        patterns: ["*"]
