@@ -20,6 +20,8 @@
 - **Zero config** — database auto-creates on first use. Install the binary, start using it.
 - **SQLite-native** — embedded WAL-mode database with optional cloud replication (S3, R2, B2, GCS)
 
+> **Setting up an agent?** Point it at the [Agent Reference](docs/agent-reference.md) — structured command tables, JSON schemas, and decision trees for all three primitives.
+
 ---
 
 ## Table of Contents
@@ -570,6 +572,7 @@ Tests use **in-memory SQLite** — no disk I/O, no cleanup, fast and isolated.
 
 ## Documentation
 
+- [Agent Reference](docs/agent-reference.md) — structured command tables, JSON schemas, decision trees, error patterns (for agents)
 - [knowledgeprim Guide](docs/knowledgeprim.md) — entity types, relationships, edge context, search strategy, discovery, agent workflows
 - [Configuration Reference](docs/configuration.md) — full YAML spec, env var overrides, examples
 - [Architecture](docs/architecture.md) — layered design, store interfaces, data flow, replication
