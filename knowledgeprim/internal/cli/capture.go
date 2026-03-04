@@ -147,7 +147,11 @@ func autoConnect(cmd *cobra.Command, s store.Store, entityID string, embedding [
 
 // checkEmbeddingCompat validates that the current embedder matches the db's
 // stored embedding metadata. Shared by capture and search commands.
-func checkEmbeddingCompat(cmd *cobra.Command, s store.Store, embedder interface{ Provider() string; Model() string; Dimensions() int }) error {
+func checkEmbeddingCompat(cmd *cobra.Command, s store.Store, embedder interface {
+	Provider() string
+	Model() string
+	Dimensions() int
+}) error {
 	sqlStore, ok := s.(*store.SQLiteStore)
 	if !ok {
 		return nil // Non-SQLite stores don't support metadata checks.

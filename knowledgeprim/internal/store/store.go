@@ -60,10 +60,10 @@ type Store interface {
 
 // Error sentinels.
 var (
-	ErrNotFound           = errors.New("entity not found")
-	ErrEdgeNotFound       = errors.New("edge not found")
-	ErrEdgeExists         = errors.New("edge already exists")
-	ErrInvalidEntity      = errors.New("invalid entity")
-	ErrEmbeddingMismatch  = errors.New("embedding model mismatch")
-	ErrNoEmbeddingMeta    = errors.New("no embedding metadata")
+	ErrNotFound          = errors.New("entity not found")
+	ErrEdgeNotFound      = errors.New("edge not found")
+	ErrEdgeExists        = errors.New("edge already exists")
+	ErrInvalidEntity     = errors.New("invalid entity")
+	ErrEmbeddingMismatch = errors.New("embedding model mismatch")
+	ErrNoEmbeddingMeta   = errors.New("no embedding metadata")
 )
