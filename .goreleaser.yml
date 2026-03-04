@@ -40,9 +40,8 @@ checksum:
   name_template: "checksums.txt"
 
 changelog:
-  sort: asc
-  filters:
-    exclude:
-      - "^docs:"
-      - "^test:"
-      - "^ci:"
+  disable: true
+
+release:
+  header: |
+    See [CHANGELOG.md](https://github.com/propifly/primkit/blob/main/CHANGELOG.md) for details.
