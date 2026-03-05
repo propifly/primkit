@@ -241,7 +241,7 @@ Edge {
 
 EmbeddingMeta {
     Provider   string     // embedding provider name (e.g., "gemini", "openai")
-    Model      string     // model name (e.g., "text-embedding-004")
+    Model      string     // model name (e.g., "gemini-embedding-001")
     Dimensions int        // vector dimensions produced by this model
     CreatedAt  time.Time  // when the metadata was first recorded
 }
@@ -335,7 +335,7 @@ type Embedder interface {
     Embed(ctx context.Context, text string) ([]float32, error)
     Dimensions() int
     Provider() string  // "gemini", "openai", or "custom"
-    Model() string     // e.g., "text-embedding-004"
+    Model() string     // e.g., "gemini-embedding-001"
 }
 ```
 
@@ -343,7 +343,7 @@ type Embedder interface {
 
 | Provider | Model | Dimensions |
 |----------|-------|------------|
-| `gemini` | `text-embedding-004` | 768 |
+| `gemini` | `gemini-embedding-001` | 3072 |
 | `openai` | `text-embedding-3-small` | 1536 |
 | `custom` | Any OpenAI-compatible endpoint | Configurable |
 
@@ -366,7 +366,7 @@ CheckEmbeddingMeta(provider, model, dimensions)
   ├── No meta yet → OK (first embed will call EnsureEmbeddingMeta)
   ├── Meta matches config → OK
   └── Meta differs → ErrEmbeddingMismatch with clear message:
-        "db uses gemini/text-embedding-004 (768d),
+        "db uses gemini/gemini-embedding-001 (3072d),
          config uses openai/text-embedding-3-small (1536d).
          Use --mode fts, run re-embed, or pass --force"
 ```

@@ -107,8 +107,8 @@ Vector embedding configuration. When a provider is configured, knowledgeprim gen
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
 | `provider` | string | `""` | Embedding provider: `gemini`, `openai`, or `custom`. Empty string disables embedding. |
-| `model` | string | `""` | Provider-specific model name (e.g., `text-embedding-004` for Gemini, `text-embedding-3-small` for OpenAI). |
-| `dimensions` | int | `768` | Expected output vector dimensions. Must match the model's output. |
+| `model` | string | `""` | Provider-specific model name (e.g., `gemini-embedding-001` for Gemini, `text-embedding-3-small` for OpenAI). |
+| `dimensions` | int | `768` | Expected output vector dimensions. Must match the model's output. `gemini-embedding-001` defaults to 3072; set this accordingly. |
 | `api_key` | string | — | API key for the embedding provider. Use `${ENV_VAR}` interpolation. |
 | `endpoint` | string | `""` | Custom endpoint URL. Required for `custom` provider. Optional for `openai` (overrides default). Unused for `gemini`. |
 
@@ -116,7 +116,7 @@ Vector embedding configuration. When a provider is configured, knowledgeprim gen
 
 | Provider | Model | Dimensions | Notes |
 |----------|-------|------------|-------|
-| `gemini` | `text-embedding-004` | 768 | Google Gemini |
+| `gemini` | `gemini-embedding-001` | 3072 | Google Gemini (supports 768/1536/3072 via Matryoshka) |
 | `openai` | `text-embedding-3-small` | 1536 | OpenAI |
 | `openai` | `text-embedding-3-large` | 3072 | OpenAI (highest quality) |
 | `custom` | Any | Configurable | Any OpenAI-compatible endpoint (local models, proxies) |
@@ -259,8 +259,8 @@ storage:
 
 embedding:
   provider: gemini
-  model: text-embedding-004
-  dimensions: 768
+  model: gemini-embedding-001
+  dimensions: 3072
   api_key: ${GEMINI_API_KEY}
 
 auto_connect:
