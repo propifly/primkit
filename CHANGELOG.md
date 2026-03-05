@@ -18,6 +18,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   to `yaml.Unmarshal` without calling `InterpolateEnvVars`, so a value like
   `api_key: ${OPENAI_API_KEY}` was forwarded literally to the provider,
   causing authentication failures at runtime.
+- **all prims**: `storage.replicate.bucket` and `storage.replicate.endpoint`
+  now have `${R2_BUCKET}` and `${R2_ENDPOINT}` references in the example
+  configs. Previously these fields were left as empty strings with no `${...}`
+  placeholder, making them impossible to set via env var interpolation even
+  though the credential fields showed the pattern. All four R2 fields now use
+  consistent `R2_*` naming (`R2_BUCKET`, `R2_ENDPOINT`, `R2_ACCESS_KEY_ID`,
+  `R2_SECRET_ACCESS_KEY`). The `docs/configuration.md` "Full YAML Spec"
+  example had the same stale `REPLICATE_ACCESS_KEY_ID` naming and is fixed.
 
 ## [v0.2.0] - 2026-03-04
 

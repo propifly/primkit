@@ -18,11 +18,11 @@ storage:
   replicate:
     enabled: false
     provider: r2
-    bucket: my-bucket
+    bucket: ${R2_BUCKET}
     path: taskprim.db
-    endpoint: https://<account-id>.r2.cloudflarestorage.com
-    access_key_id: ${REPLICATE_ACCESS_KEY_ID}
-    secret_access_key: ${REPLICATE_SECRET_ACCESS_KEY}
+    endpoint: ${R2_ENDPOINT}
+    access_key_id: ${R2_ACCESS_KEY_ID}
+    secret_access_key: ${R2_SECRET_ACCESS_KEY}
 
 auth:
   keys:

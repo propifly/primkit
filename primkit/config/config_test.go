@@ -135,6 +135,30 @@ func TestLoad_StorageDBFromConfig(t *testing.T) {
 		"storage.db from YAML must be loaded into cfg.Storage.DB")
 }
 
+// Regression test: ALL R2 fields (bucket, endpoint, access_key_id, secret_access_key)
+// must expand from ${...} references in the YAML config. Previously only
+// secret_access_key was covered by the test fixture; bucket and endpoint were
+// left as empty strings in the knowledgeprim example config with no ${...} reference,
+// making them impossible to set via env var interpolation.
+func TestLoad_R2AllFieldsInterpolated(t *testing.T) {
+	t.Setenv("R2_BUCKET", "my-test-bucket")
+	t.Setenv("R2_ENDPOINT", "https://abc123.r2.cloudflarestorage.com")
+	t.Setenv("R2_ACCESS_KEY_ID", "test-access-key")
+	t.Setenv("R2_SECRET_ACCESS_KEY", "test-secret-key")
+
+	cfg, err := Load(filepath.Join("testdata", "r2vars.yaml"))
+	require.NoError(t, err)
+
+	assert.Equal(t, "my-test-bucket", cfg.Storage.Replicate.Bucket,
+		"${R2_BUCKET} must be expanded in storage.replicate.bucket")
+	assert.Equal(t, "https://abc123.r2.cloudflarestorage.com", cfg.Storage.Replicate.Endpoint,
+		"${R2_ENDPOINT} must be expanded in storage.replicate.endpoint")
+	assert.Equal(t, "test-access-key", cfg.Storage.Replicate.AccessKeyID,
+		"${R2_ACCESS_KEY_ID} must be expanded in storage.replicate.access_key_id")
+	assert.Equal(t, "test-secret-key", cfg.Storage.Replicate.SecretAccessKey,
+		"${R2_SECRET_ACCESS_KEY} must be expanded in storage.replicate.secret_access_key")
+}
+
 // Regression test: env var override wins over the config file value for storage.db.
 func TestLoad_StorageDBEnvOverrideWins(t *testing.T) {
 	dir := t.TempDir()
