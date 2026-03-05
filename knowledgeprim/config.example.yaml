@@ -8,11 +8,11 @@ storage:
   replicate:
     enabled: false
     provider: "r2"            # r2, s3, b2, gcs
-    bucket: ""
-    path: "default.db"
-    endpoint: ""
-    access_key_id: "${KNOWLEDGEPRIM_R2_ACCESS_KEY_ID}"
-    secret_access_key: "${KNOWLEDGEPRIM_R2_SECRET_ACCESS_KEY}"
+    bucket: "${R2_BUCKET}"
+    path: "knowledgeprim.db"
+    endpoint: "${R2_ENDPOINT}"              # required for R2: https://<account>.r2.cloudflarestorage.com
+    access_key_id: "${R2_ACCESS_KEY_ID}"
+    secret_access_key: "${R2_SECRET_ACCESS_KEY}"
 
 auth:
   keys:

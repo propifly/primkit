@@ -16,11 +16,11 @@ storage:
   replicate:
     enabled: false
     # provider: r2          # r2 | s3 | b2 | gcs
-    # bucket: my-bucket
+    # bucket: ${R2_BUCKET}
     # path: taskprim.db
-    # endpoint: https://<account-id>.r2.cloudflarestorage.com  # required for R2/B2
-    # access_key_id: ${REPLICATE_ACCESS_KEY_ID}
-    # secret_access_key: ${REPLICATE_SECRET_ACCESS_KEY}
+    # endpoint: ${R2_ENDPOINT}              # required for R2/B2: https://<account>.r2.cloudflarestorage.com
+    # access_key_id: ${R2_ACCESS_KEY_ID}
+    # secret_access_key: ${R2_SECRET_ACCESS_KEY}
 
 # Authentication for serve and MCP SSE modes.
 # CLI mode uses filesystem permissions — no auth needed.
