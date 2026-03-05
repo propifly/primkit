@@ -6,6 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+
+- **queueprim**: Work queue primitive — CLI, HTTP API, MCP server
+  - Persistent SQLite-backed job queue with priority, retries, and dead-letter support
+  - Atomic dequeue with visibility timeout (`claimed` status prevents double-processing)
+  - Job lifecycle: `pending` → `claimed` → `done` / `failed` / `dead`
+  - Delayed jobs via `visible_after` timestamp; background sweeper releases expired claims
+  - Slash-containing queue names supported (e.g., `infra/prod`)
+  - MCP tools: `enqueue_job`, `dequeue_job`, `complete_job`, `fail_job`, `release_job`,
+    `extend_job`, `list_jobs`, `get_job`, `list_queues`, `get_stats`, `purge_queue`
+  - CLI commands mirroring all API/MCP operations
+
 ### Fixed
 
 - **all prims**: Global env vars (`TASKPRIM_DB`, `STATEPRIM_DB`, `KNOWLEDGEPRIM_DB`,
