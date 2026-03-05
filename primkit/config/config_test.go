@@ -113,9 +113,38 @@ func TestInterpolateEnvVars(t *testing.T) {
 	t.Setenv("BAZ", "qux")
 
 	input := []byte("key1: ${FOO}\nkey2: ${BAZ}\nkey3: ${MISSING}")
-	result := interpolateEnvVars(input)
+	result := InterpolateEnvVars(input)
 
 	assert.Contains(t, string(result), "key1: bar")
 	assert.Contains(t, string(result), "key2: qux")
 	assert.Contains(t, string(result), "key3: ")
+}
+
+// Regression test: storage.db in YAML config must be loaded and accessible.
+// Bug: stateprim/taskprim/knowledgeprim resolved DB path before loading config,
+// so cfg.Storage.DB was never consulted. Verify the config layer reads it.
+func TestLoad_StorageDBFromConfig(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "config.yaml")
+	content := []byte("storage:\n  db: /custom/path/to.db\n")
+	require.NoError(t, os.WriteFile(path, content, 0644))
+
+	cfg, err := Load(path)
+	require.NoError(t, err)
+	assert.Equal(t, "/custom/path/to.db", cfg.Storage.DB,
+		"storage.db from YAML must be loaded into cfg.Storage.DB")
+}
+
+// Regression test: env var override wins over the config file value for storage.db.
+func TestLoad_StorageDBEnvOverrideWins(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "config.yaml")
+	require.NoError(t, os.WriteFile(path, []byte("storage:\n  db: /from/config.db\n"), 0644))
+
+	t.Setenv("STATEPRIM_DB", "/from/env.db")
+
+	cfg, err := LoadWithEnvOverrides(path, "STATEPRIM")
+	require.NoError(t, err)
+	assert.Equal(t, "/from/env.db", cfg.Storage.DB,
+		"STATEPRIM_DB env var must override storage.db from config file")
 }

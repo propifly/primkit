@@ -6,6 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Fixed
+- **stateprim / taskprim / knowledgeprim**: `storage.db` config key is now
+  honored as the database path. Previously, the DB path fallback chain ran
+  before the config file was loaded, so `cfg.Storage.DB` was never consulted
+  and the hardcoded default (`~/.{prim}/default.db`) always won. Precedence
+  is now: `--db` flag → `*PRIM_DB` env var → `storage.db` config → default.
+- **knowledgeprim**: `${...}` environment variable references in
+  `embedding.api_key` (and all other `embedding.*` fields) are now expanded
+  before YAML parsing. Previously `loadEmbedConfig` passed raw bytes directly
+  to `yaml.Unmarshal` without calling `InterpolateEnvVars`, so a value like
+  `api_key: ${OPENAI_API_KEY}` was forwarded literally to the provider,
+  causing authentication failures at runtime.
+
 ## [v0.2.0] - 2026-03-04
 
 ### Added

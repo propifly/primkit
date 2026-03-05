@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -486,4 +487,33 @@ func TestLifecycle_AppendQueryStats(t *testing.T) {
 	// Namespaces.
 	nsOut := execCmd(t, s, "namespaces")
 	assert.Contains(t, nsOut, "audit")
+}
+
+// ---------------------------------------------------------------------------
+// Regression tests
+// ---------------------------------------------------------------------------
+
+// TestDBPathFromConfig verifies that storage.db in the YAML config file is
+// used as the database path when --db and STATEPRIM_DB are both unset.
+//
+// Regression for: config was loaded after the DB path fallback chain, so
+// cfg.Storage.DB was never consulted and the hardcoded default always won.
+func TestDBPathFromConfig(t *testing.T) {
+	dir := t.TempDir()
+	dbPath := filepath.Join(dir, "stateprim-test.db")
+	configPath := filepath.Join(dir, "config.yaml")
+
+	content := []byte("storage:\n  db: " + dbPath + "\n")
+	require.NoError(t, os.WriteFile(configPath, content, 0644))
+
+	root := NewRootCmd()
+	buf := &bytes.Buffer{}
+	root.SetOut(buf)
+	root.SetErr(buf)
+	root.SetArgs([]string{"--config", configPath, "stats"})
+	err := root.Execute()
+	require.NoError(t, err, "command should succeed using DB path from config")
+
+	_, statErr := os.Stat(dbPath)
+	assert.NoError(t, statErr, "DB file should be created at path from config, not the default")
 }

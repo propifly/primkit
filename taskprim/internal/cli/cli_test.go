@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -825,4 +826,33 @@ func TestLifecycle_SeenTracking(t *testing.T) {
 	var unseen2 []*model.Task
 	require.NoError(t, json.Unmarshal([]byte(listOut2), &unseen2))
 	assert.Empty(t, unseen2)
+}
+
+// ---------------------------------------------------------------------------
+// Regression tests
+// ---------------------------------------------------------------------------
+
+// TestDBPathFromConfig verifies that storage.db in the YAML config file is
+// used as the database path when --db and TASKPRIM_DB are both unset.
+//
+// Regression for: config was loaded after the DB path fallback chain, so
+// cfg.Storage.DB was never consulted and the hardcoded default always won.
+func TestDBPathFromConfig(t *testing.T) {
+	dir := t.TempDir()
+	dbPath := filepath.Join(dir, "taskprim-test.db")
+	configPath := filepath.Join(dir, "config.yaml")
+
+	content := []byte("storage:\n  db: " + dbPath + "\n")
+	require.NoError(t, os.WriteFile(configPath, content, 0644))
+
+	root := NewRootCmd()
+	buf := &bytes.Buffer{}
+	root.SetOut(buf)
+	root.SetErr(buf)
+	root.SetArgs([]string{"--config", configPath, "list"})
+	err := root.Execute()
+	require.NoError(t, err, "command should succeed using DB path from config")
+
+	_, statErr := os.Stat(dbPath)
+	assert.NoError(t, statErr, "DB file should be created at path from config, not the default")
 }
