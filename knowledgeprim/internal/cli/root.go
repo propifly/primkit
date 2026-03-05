@@ -73,9 +73,19 @@ Three interfaces: CLI (default), HTTP server (serve), MCP server (mcp).`,
 	root.PersistentFlags().StringVarP(&format, "format", "f", "text", "output format: text, json")
 
 	root.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
-		// Resolve database path: flag > env var > default.
 		if dbPath == "" {
 			dbPath = os.Getenv("KNOWLEDGEPRIM_DB")
+		}
+
+		// Load config for replication settings and DB path fallback.
+		cfg, err := config.LoadWithEnvOverrides(configPath, "KNOWLEDGEPRIM")
+		if err != nil {
+			return fmt.Errorf("loading config: %w", err)
+		}
+
+		// Resolve database path: flag > env var > config > default.
+		if dbPath == "" {
+			dbPath = cfg.Storage.DB
 		}
 		if dbPath == "" {
 			home, err := os.UserHomeDir()
@@ -83,12 +93,6 @@ Three interfaces: CLI (default), HTTP server (serve), MCP server (mcp).`,
 				return fmt.Errorf("determining home directory: %w", err)
 			}
 			dbPath = filepath.Join(home, ".knowledgeprim", "default.db")
-		}
-
-		// Load config.
-		cfg, err := config.LoadWithEnvOverrides(configPath, "KNOWLEDGEPRIM")
-		if err != nil {
-			return fmt.Errorf("loading config: %w", err)
 		}
 
 		// Replication: restore if needed.

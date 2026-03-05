@@ -75,18 +75,22 @@ MCP server (mcp). All share the same SQLite database.`,
 		if dbPath == "" {
 			dbPath = os.Getenv("STATEPRIM_DB")
 		}
+
+		// Load config for replication settings and DB path fallback.
+		cfg, err := config.LoadWithEnvOverrides(configPath, "STATEPRIM")
+		if err != nil {
+			return fmt.Errorf("loading config: %w", err)
+		}
+
+		if dbPath == "" {
+			dbPath = cfg.Storage.DB
+		}
 		if dbPath == "" {
 			home, err := os.UserHomeDir()
 			if err != nil {
 				return fmt.Errorf("determining home directory: %w", err)
 			}
 			dbPath = filepath.Join(home, ".stateprim", "default.db")
-		}
-
-		// Load config for replication settings.
-		cfg, err := config.LoadWithEnvOverrides(configPath, "STATEPRIM")
-		if err != nil {
-			return fmt.Errorf("loading config: %w", err)
 		}
 
 		// If replication is enabled and the local DB doesn't exist, restore

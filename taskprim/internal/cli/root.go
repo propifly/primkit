@@ -70,9 +70,19 @@ MCP server (mcp). All share the same SQLite database.`,
 	// and injects the store into the command's context. This is lazy — if
 	// you run "taskprim --help", the database is never opened.
 	root.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
-		// Resolve database path: flag > env var > default.
 		if dbPath == "" {
 			dbPath = os.Getenv("TASKPRIM_DB")
+		}
+
+		// Load config for replication settings and DB path fallback.
+		cfg, err := config.LoadWithEnvOverrides(configPath, "TASKPRIM")
+		if err != nil {
+			return fmt.Errorf("loading config: %w", err)
+		}
+
+		// Resolve database path: flag > env var > config > default.
+		if dbPath == "" {
+			dbPath = cfg.Storage.DB
 		}
 		if dbPath == "" {
 			home, err := os.UserHomeDir()
@@ -80,12 +90,6 @@ MCP server (mcp). All share the same SQLite database.`,
 				return fmt.Errorf("determining home directory: %w", err)
 			}
 			dbPath = filepath.Join(home, ".taskprim", "default.db")
-		}
-
-		// Load config for replication settings.
-		cfg, err := config.LoadWithEnvOverrides(configPath, "TASKPRIM")
-		if err != nil {
-			return fmt.Errorf("loading config: %w", err)
 		}
 
 		// If replication is enabled and the local DB doesn't exist, restore
