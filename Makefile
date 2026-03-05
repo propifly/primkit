@@ -7,36 +7,44 @@ build:
 	cd taskprim && go build -o ../bin/taskprim ./cmd/taskprim
 	cd stateprim && go build -o ../bin/stateprim ./cmd/stateprim
 	cd knowledgeprim && go build -o ../bin/knowledgeprim ./cmd/knowledgeprim
+	cd queueprim && go build -o ../bin/queueprim ./cmd/queueprim
 
 # Cross-compile for Raspberry Pi (ARM64 Linux).
 build-pi:
 	cd taskprim && GOOS=linux GOARCH=arm64 go build -o ../bin/taskprim-linux-arm64 ./cmd/taskprim
 	cd stateprim && GOOS=linux GOARCH=arm64 go build -o ../bin/stateprim-linux-arm64 ./cmd/stateprim
 	cd knowledgeprim && GOOS=linux GOARCH=arm64 go build -o ../bin/knowledgeprim-linux-arm64 ./cmd/knowledgeprim
+	cd queueprim && GOOS=linux GOARCH=arm64 go build -o ../bin/queueprim-linux-arm64 ./cmd/queueprim
 
 test:
 	cd primkit && go test -v -race -count=1 ./...
 	cd taskprim && go test -v -race -count=1 ./...
 	cd stateprim && go test -v -race -count=1 ./...
 	cd knowledgeprim && go test -v -race -count=1 ./...
+	cd queueprim && go test -v -race -count=1 ./...
 
 lint:
 	cd primkit && go vet ./...
 	cd taskprim && go vet ./...
 	cd stateprim && go vet ./...
 	cd knowledgeprim && go vet ./...
+	cd queueprim && go vet ./...
 
 fmt:
 	cd primkit && gofmt -s -w .
 	cd taskprim && gofmt -s -w .
 	cd stateprim && gofmt -s -w .
 	cd knowledgeprim && gofmt -s -w .
+	cd queueprim && gofmt -s -w .
 
 tidy:
 	cd primkit && go mod tidy
 	cd taskprim && go mod tidy
 	cd stateprim && go mod tidy
 	cd knowledgeprim && go mod tidy
+	# go mod tidy adds primkit (workspace-local private module) to go.mod; strip it
+	# so CI doesn't try to download/verify the private repo version.
+	cd queueprim && go mod tidy; go mod edit -droprequire=github.com/propifly/primkit/primkit; grep -v "propifly/primkit/primkit" go.sum > go.sum.tmp && mv go.sum.tmp go.sum || true
 
 clean:
 	rm -rf bin/

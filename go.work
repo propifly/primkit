@@ -5,4 +5,5 @@ use (
 	./taskprim
 	./stateprim
 	./knowledgeprim
+	./queueprim
 )
