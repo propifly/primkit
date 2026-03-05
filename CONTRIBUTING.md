@@ -9,14 +9,16 @@ Thank you for considering a contribution. This guide explains how to set up the 
 ```bash
 git clone git@github.com:propifly/primkit.git
 cd primkit
-make build   # builds bin/taskprim and bin/stateprim
+make build   # builds bin/taskprim, bin/stateprim, bin/knowledgeprim, bin/queueprim
 make test    # runs all tests with race detection
 ```
 
-The project uses a Go workspace (`go.work`) with three modules:
+The project uses a Go workspace (`go.work`) with five modules:
 - `primkit/` — shared library (config, auth, db, server, replicate)
 - `taskprim/` — task management primitive
 - `stateprim/` — state persistence primitive
+- `knowledgeprim/` — knowledge graph primitive
+- `queueprim/` — work queue primitive
 
 ## Running Tests
 
@@ -29,6 +31,8 @@ Individual modules:
 ```bash
 cd taskprim && go test ./...
 cd stateprim && go test ./...
+cd knowledgeprim && go test ./...
+cd queueprim && go test ./...
 cd primkit && go test ./...
 ```
 

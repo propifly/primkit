@@ -21,6 +21,8 @@ Binaries are placed in `./bin/`:
 ```
 bin/taskprim
 bin/stateprim
+bin/knowledgeprim
+bin/queueprim
 ```
 
 ## 2. Quick Start (No Replication)
@@ -36,6 +38,14 @@ bin/stateprim
 ```
 
 Both create SQLite databases at `~/.taskprim/default.db` and `~/.stateprim/default.db` respectively.
+
+```bash
+# queueprim — enqueue and dequeue jobs
+./bin/queueprim enqueue --queue demo --payload '{"task":"hello"}'
+./bin/queueprim dequeue --queue demo --worker local
+```
+
+Creates `~/.queueprim/default.db` on first use.
 
 ---
 
@@ -180,7 +190,7 @@ server:
 
 ## 7. Environment Variable Overrides
 
-Every config field can be overridden with env vars (prefix `TASKPRIM_` or `STATEPRIM_`):
+Every config field can be overridden with env vars (prefixes: `TASKPRIM_`, `STATEPRIM_`, `KNOWLEDGEPRIM_`, `QUEUEPRIM_`):
 
 | Env Var | Config Field |
 |---------|-------------|

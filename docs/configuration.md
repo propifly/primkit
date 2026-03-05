@@ -1,6 +1,6 @@
 # Configuration Reference
 
-All three primitives (**taskprim**, **stateprim**, and **knowledgeprim**) read the same YAML configuration format. Copy `config.example.yaml` to `config.yaml` and edit to suit your environment. knowledgeprim adds additional fields for embedding and auto-connect.
+All four primitives (**taskprim**, **stateprim**, **knowledgeprim**, and **queueprim**) read the same YAML configuration format. Copy `config.example.yaml` to `config.yaml` and edit to suit your environment. knowledgeprim adds additional fields for embedding and auto-connect.
 
 ## Resolution Order
 
@@ -24,7 +24,7 @@ inside the YAML when you need to inject a dynamic value.
 Highest precedence wins:
 
 1. **`--db` / `--port` CLI flags**
-2. **Environment overrides** — prefix-based env vars (`TASKPRIM_*`, `STATEPRIM_*`, `KNOWLEDGEPRIM_*`)
+2. **Environment overrides** — prefix-based env vars (`TASKPRIM_*`, `STATEPRIM_*`, `KNOWLEDGEPRIM_*`, `QUEUEPRIM_*`)
 3. **Hardcoded defaults**
 
 ## Full YAML Spec
@@ -223,6 +223,22 @@ Same storage/server mapping as above, plus embedding-specific overrides:
 | `KNOWLEDGEPRIM_EMBEDDING_DIMENSIONS` | `embedding.dimensions` |
 | `KNOWLEDGEPRIM_EMBEDDING_API_KEY` | `embedding.api_key` |
 | `KNOWLEDGEPRIM_EMBEDDING_ENDPOINT` | `embedding.endpoint` |
+
+### queueprim prefix: `QUEUEPRIM_`
+
+Same storage/server mapping as taskprim and stateprim. No primitive-specific fields beyond the shared base.
+
+| Env Var | Overrides |
+|---------|-----------|
+| `QUEUEPRIM_DB` | `storage.db` |
+| `QUEUEPRIM_SERVER_PORT` | `server.port` |
+| `QUEUEPRIM_REPLICATE_ENABLED` | `storage.replicate.enabled` |
+| `QUEUEPRIM_REPLICATE_PROVIDER` | `storage.replicate.provider` |
+| `QUEUEPRIM_REPLICATE_BUCKET` | `storage.replicate.bucket` |
+| `QUEUEPRIM_REPLICATE_PATH` | `storage.replicate.path` |
+| `QUEUEPRIM_REPLICATE_ENDPOINT` | `storage.replicate.endpoint` |
+| `QUEUEPRIM_REPLICATE_ACCESS_KEY_ID` | `storage.replicate.access_key_id` |
+| `QUEUEPRIM_REPLICATE_SECRET_ACCESS_KEY` | `storage.replicate.secret_access_key` |
 
 ## Examples
 

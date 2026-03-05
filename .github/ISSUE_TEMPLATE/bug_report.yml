@@ -1,5 +1,5 @@
 name: Bug Report
-description: Report a bug in taskprim or stateprim
+description: Report a bug in taskprim, stateprim, knowledgeprim, or queueprim
 labels: ["bug"]
 body:
   - type: dropdown
@@ -14,6 +14,12 @@ body:
         - stateprim CLI
         - stateprim API
         - stateprim MCP
+        - knowledgeprim CLI
+        - knowledgeprim API
+        - knowledgeprim MCP
+        - queueprim CLI
+        - queueprim API
+        - queueprim MCP
         - primkit (shared library)
         - Replication (Litestream)
         - Configuration
@@ -57,7 +63,7 @@ body:
       placeholder: |
         - OS: macOS 15.2 / Ubuntu 24.04 / etc.
         - Go: 1.22.5
-        - taskprim/stateprim version: v0.1.0 (or commit hash)
+        - primitive version: v0.1.0 (or commit hash)
     validations:
       required: true
 

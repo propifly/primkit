@@ -30,7 +30,7 @@ If you discover a security vulnerability, please report it privately:
 ## Scope
 
 This policy covers:
-- taskprim and stateprim binaries
+- taskprim, stateprim, knowledgeprim, and queueprim binaries
 - The primkit shared library
 - Configuration file handling (credential interpolation)
 - HTTP API authentication

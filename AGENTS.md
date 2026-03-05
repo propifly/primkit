@@ -4,15 +4,15 @@ Instructions for AI coding agents working on the primkit codebase, and pointers 
 
 ## If you are using primkit (not developing it)
 
-See the [Agent Reference](docs/agent-reference.md) for structured command tables, JSON output schemas, decision trees, and error handling patterns for all three primitives (taskprim, stateprim, knowledgeprim).
+See the [Agent Reference](docs/agent-reference.md) for structured command tables, JSON output schemas, decision trees, and error handling patterns for all four primitives (taskprim, stateprim, knowledgeprim, queueprim).
 
 For knowledgeprim usage strategy (entity types, relationships, search modes, discovery workflows), see the [knowledgeprim Guide](docs/knowledgeprim.md).
 
 ## Build and test
 
 ```bash
-make build          # Build bin/taskprim, bin/stateprim, bin/knowledgeprim
-make test           # Run all tests (348 tests, 4 modules, race detector)
+make build          # Build bin/taskprim, bin/stateprim, bin/knowledgeprim, bin/queueprim
+make test           # Run all tests across all modules, race detector
 make lint           # go vet on all modules
 make fmt            # gofmt -s -w on all modules
 make tidy           # go mod tidy on all modules
@@ -24,6 +24,7 @@ Single module:
 cd taskprim && go test -v -race -count=1 ./...
 cd stateprim && go test -v -race -count=1 ./...
 cd knowledgeprim && go test -v -race -count=1 ./...
+cd queueprim && go test -v -race -count=1 ./...
 cd primkit && go test -v -race -count=1 ./...
 ```
 
@@ -45,7 +46,8 @@ primkit/
 ├── taskprim/          # Task management primitive
 ├── stateprim/         # State persistence primitive
 ├── knowledgeprim/     # Knowledge graph primitive
-├── go.work            # Go workspace (4 modules)
+├── queueprim/         # Work queue primitive
+├── go.work            # Go workspace (5 modules)
 └── Makefile           # Build targets
 ```
 
@@ -62,7 +64,7 @@ Each primitive follows identical internal layout:
     └── mcpserver/     # MCP tool registrations
 ```
 
-knowledgeprim additionally has `internal/embed/` for the embedding provider abstraction.
+knowledgeprim additionally has `internal/embed/` for the embedding provider abstraction. queueprim's store runs a background sweeper goroutine (in serve/mcp modes) that releases claimed jobs whose visibility timeout has expired.
 
 ## Code style
 

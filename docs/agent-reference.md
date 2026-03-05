@@ -15,18 +15,18 @@ Install only the primitives you need. Each is a standalone binary.
 OS=$(uname -s | tr '[:upper:]' '[:lower:]')
 ARCH=$(uname -m); [[ "$ARCH" == "x86_64" ]] && ARCH="amd64"
 
-# Install all three (or pick the ones you need)
-for bin in taskprim stateprim knowledgeprim; do
+# Install all four (or pick the ones you need)
+for bin in taskprim stateprim knowledgeprim queueprim; do
   curl -sL "https://github.com/propifly/primkit/releases/latest/download/${bin}_0.1.0_${OS}_${ARCH}.tar.gz" | tar xz
 done
-sudo mv taskprim stateprim knowledgeprim /usr/local/bin/
+sudo mv taskprim stateprim knowledgeprim queueprim /usr/local/bin/
 ```
 
 **From source (requires Go 1.22+):**
 
 ```bash
 git clone https://github.com/propifly/primkit.git && cd primkit && make build
-# Binaries: bin/taskprim, bin/stateprim, bin/knowledgeprim
+# Binaries: bin/taskprim, bin/stateprim, bin/knowledgeprim, bin/queueprim
 ```
 
 **Verify:**
@@ -35,6 +35,7 @@ git clone https://github.com/propifly/primkit.git && cd primkit && make build
 taskprim --help
 stateprim --help
 knowledgeprim --help
+queueprim --help
 ```
 
 No configuration required. Databases auto-create on first use at `~/<primitive>/default.db`.
@@ -375,6 +376,103 @@ knowledgeprim discover --orphans --weak-edges --format json
 
 ---
 
+## queueprim
+
+Persistent work queues with priority, retries, and atomic dequeue. Jobs follow: `pending` → `claimed` → `done` / `failed` / `dead`.
+
+### Commands
+
+| Command | Args | Required Flags | Optional Flags |
+|---------|------|---------------|----------------|
+| `enqueue` | — | `--queue`, `--payload` (JSON) | `--type`, `--priority` (high/normal/low), `--max-retries`, `--delay` (e.g. `5m`) |
+| `dequeue` | — | `--queue` | `--worker`, `--timeout` (default 30m), `--type` |
+| `peek` | — | `--queue` | — |
+| `complete <id>` | job ID | — | `--output` (JSON) |
+| `fail <id>` | job ID | — | `--reason`, `--dead` (force dead-letter) |
+| `release <id>` | job ID | — | — |
+| `extend <id>` | job ID | — | `--by` (duration, default 30m) |
+| `get <id>` | job ID | — | — |
+| `list` | — | — | `--queue`, `--status`, `--type`, `--older-than` |
+| `queues` | — | — | — |
+| `stats` | — | — | — |
+| `purge` | — | `--queue`, `--status` | `--older-than` |
+| `export` | — | — | `--queue` |
+| `import` | — | — | — |
+| `restore` | — | — | `--timestamp`, `--source` |
+
+### JSON Schemas
+
+**Job object:**
+
+```json
+{
+  "id": "q_x7k2m9p4n1",
+  "queue": "infra/fixes",
+  "type": "ssh_auth_fail",
+  "priority": "normal",
+  "payload": {"host": "web-01", "issue": "disk_full"},
+  "status": "claimed",
+  "claimed_by": "johanna",
+  "claimed_at": "2026-03-05T10:00:00Z",
+  "visible_after": "2026-03-05T10:30:00Z",
+  "completed_at": null,
+  "output": null,
+  "failure_reason": null,
+  "attempt_count": 1,
+  "max_retries": 3,
+  "created_at": "2026-03-05T09:58:00Z",
+  "updated_at": "2026-03-05T10:00:00Z"
+}
+```
+
+**`queues` output:**
+
+```json
+[
+  {"queue": "infra/fixes", "pending": 3, "claimed": 1, "done": 12, "failed": 0, "dead": 1}
+]
+```
+
+**`stats` output:**
+
+```json
+{
+  "total_pending": 5,
+  "total_claimed": 2,
+  "total_done": 148,
+  "total_failed": 3,
+  "total_dead": 1
+}
+```
+
+**`dequeue` returns `204 No Content` (CLI: exit 0 with no output) when the queue is empty.**
+
+### Idempotency
+
+| Command | Idempotent | Notes |
+|---------|-----------|-------|
+| `enqueue` | No | Creates a new job every call |
+| `dequeue` | No | Atomically claims and removes from pending pool |
+| `peek`, `get`, `list`, `queues`, `stats` | Yes | Read-only |
+| `complete` | No | Terminal — cannot re-complete |
+| `fail` | No | Transitions status; retries decrement |
+| `release` | Yes | Releasing an already-pending job is a no-op |
+| `extend` | No | Additive — each call pushes the timeout further |
+| `purge` | No | Permanently deletes matching jobs |
+
+### Decision Tree
+
+- **Producer enqueues work**: `enqueue --queue <q> --payload '<json>'`
+- **Worker claims next job**: `dequeue --queue <q> --worker <name> --format json` → parse `id`
+- **Long-running job (heartbeat)**: `extend <id> --by 30m` before timeout expires
+- **Mark success**: `complete <id>` (optionally `--output '<json>'`)
+- **Mark failure (retriable)**: `fail <id> --reason "..."` → retries if `max_retries > attempt_count`
+- **Mark failure (permanent)**: `fail <id> --dead`
+- **Inspect queue without consuming**: `peek --queue <q>`
+- **Clean up old done jobs**: `purge --queue <q> --status done --older-than 7d`
+
+---
+
 ## Error Patterns
 
 All primitives return non-zero exit codes on error. Error messages go to stderr.
@@ -391,6 +489,12 @@ All primitives return non-zero exit codes on error. Error messages go to stderr.
 | `"database is locked"` | Another process holds the SQLite lock | Retry after a short delay (SQLite busy timeout handles most cases) |
 | `"list is required"` | taskprim `add` without `--list` | Add `--list <list>` |
 | `"namespace is required"` | stateprim command without namespace arg | Provide namespace as first positional arg |
+| `"queue is required"` | queueprim command without `--queue` | Add `--queue <name>` |
+| `"payload is required"` | queueprim `enqueue` without `--payload` | Add `--payload '<json>'` |
+| `"payload must be valid JSON"` | queueprim payload is not valid JSON | Wrap in single quotes; ensure valid JSON |
+| `"job not found"` | Job ID doesn't exist | Verify ID with `list --format json` |
+| `"invalid status transition"` | Operation not valid for current job status (e.g., completing a done job) | Check job status with `get <id>` first |
+| `"queue is empty"` (CLI exit 0) | `dequeue` or `peek` on an empty queue | Normal — poll again or exit worker loop |
 
 ## Environment Variables
 
@@ -399,6 +503,7 @@ All primitives return non-zero exit codes on error. Error messages go to stderr.
 | `TASKPRIM_DB` | taskprim | `storage.db` path |
 | `STATEPRIM_DB` | stateprim | `storage.db` path |
 | `KNOWLEDGEPRIM_DB` | knowledgeprim | `storage.db` path |
+| `QUEUEPRIM_DB` | queueprim | `storage.db` path |
 | `TASKPRIM_LIST` | taskprim | Default list name for new tasks |
 
 ## ID Formats
@@ -407,5 +512,6 @@ All primitives return non-zero exit codes on error. Error messages go to stderr.
 |-----------|--------|---------|-------------|
 | taskprim | `t_` | `t_x7k2m9p4n1` | Store on `add` |
 | knowledgeprim (entity) | `e_` | `e_a3b4c5d6e7` | Store on `capture` |
+| queueprim | `q_` | `q_x7k2m9p4n1` | Store on `enqueue` |
 
 stateprim uses user-provided namespace + key pairs, not generated IDs.

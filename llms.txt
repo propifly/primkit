@@ -1,19 +1,20 @@
 # primkit
 
-> Infrastructure primitives for AI agents — tasks, state, and knowledge graphs. Single Go binaries with embedded SQLite. CLI, HTTP API, and MCP interfaces. Zero dependencies, zero config.
+> Infrastructure primitives for AI agents — tasks, state, knowledge graphs, and work queues. Single Go binaries with embedded SQLite. CLI, HTTP API, and MCP interfaces. Zero dependencies, zero config.
 
-primkit provides three primitives that agents use directly via CLI or through MCP integration:
+primkit provides four primitives that agents use directly via CLI or through MCP integration:
 
 - **taskprim** — task management with lifecycle tracking, lists, labels, and per-agent seen-tracking
 - **stateprim** — key-value state, dedup lookups, and immutable append logs in namespaced storage
 - **knowledgeprim** — knowledge graphs with typed entities, weighted contextualized edges, hybrid search (FTS5 + vector + RRF), and discovery operations
+- **queueprim** — persistent work queues with priority, retries, dead-letter support, and atomic dequeue with visibility timeouts
 
 Each primitive is a single binary that auto-creates its SQLite database on first use. No server required for CLI usage.
 
 ## Documentation
 
 - [README](https://github.com/propifly/primkit/blob/main/README.md): Installation, quick start, API endpoints, MCP configuration
-- [Agent Reference](https://github.com/propifly/primkit/blob/main/docs/agent-reference.md): Structured command tables, JSON schemas, decision trees, error patterns for all three primitives
+- [Agent Reference](https://github.com/propifly/primkit/blob/main/docs/agent-reference.md): Structured command tables, JSON schemas, decision trees, error patterns for all four primitives
 - [AGENTS.md](https://github.com/propifly/primkit/blob/main/AGENTS.md): Instructions for AI agents developing or using primkit
 - [knowledgeprim Guide](https://github.com/propifly/primkit/blob/main/docs/knowledgeprim.md): Entity types, relationships, edge context, search strategy, discovery workflows
 - [Configuration](https://github.com/propifly/primkit/blob/main/docs/configuration.md): Full YAML spec, environment variable overrides, embedding provider setup

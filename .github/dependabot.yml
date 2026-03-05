@@ -24,6 +24,22 @@ updates:
       all:
         patterns: ["*"]
 
+  - package-ecosystem: gomod
+    directory: /knowledgeprim
+    schedule:
+      interval: weekly
+    groups:
+      all:
+        patterns: ["*"]
+
+  - package-ecosystem: gomod
+    directory: /queueprim
+    schedule:
+      interval: weekly
+    groups:
+      all:
+        patterns: ["*"]
+
   - package-ecosystem: github-actions
     directory: /
     schedule:

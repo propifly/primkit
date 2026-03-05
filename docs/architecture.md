@@ -1,12 +1,12 @@
 # Architecture
 
-Primkit is a monorepo containing three primitives (**taskprim**, **stateprim**, and **knowledgeprim**) and a shared infrastructure library (**primkit**). All primitives follow identical layered architecture — the only differences are the domain model, store operations, and (for knowledgeprim) the embedding layer.
+Primkit is a monorepo containing four primitives (**taskprim**, **stateprim**, **knowledgeprim**, and **queueprim**) and a shared infrastructure library (**primkit**). All primitives follow identical layered architecture — the only differences are the domain model, store operations, and (for knowledgeprim) the embedding layer.
 
 ## Repository Structure
 
 ```
 primkit/
-├── go.work                  # Go workspace (4 modules)
+├── go.work                  # Go workspace (5 modules)
 ├── Makefile                 # build, test, lint, fmt, build-pi
 ├── config.example.yaml      # shared config format
 ├── primkit/                 # shared library (module: github.com/propifly/primkit/primkit)
@@ -32,13 +32,21 @@ primkit/
 │       ├── cli/             # Cobra commands (set, get, append, query, ...)
 │       ├── api/             # HTTP API handler
 │       └── mcpserver/       # MCP tool registration
-└── knowledgeprim/           # knowledge graph primitive (module: github.com/propifly/primkit/knowledgeprim)
-    ├── cmd/knowledgeprim/   # main.go entry point
+├── knowledgeprim/           # knowledge graph primitive (module: github.com/propifly/primkit/knowledgeprim)
+│   ├── cmd/knowledgeprim/   # main.go entry point
+│   └── internal/
+│       ├── model/           # Entity, Edge, SearchFilter, TraversalOpts, DiscoverOpts
+│       ├── store/           # Store interface + SQLite implementation (FTS5, vectors)
+│       ├── embed/           # Embedding provider abstraction (Gemini, OpenAI, custom)
+│       ├── cli/             # Cobra commands (capture, search, connect, discover, ...)
+│       ├── api/             # HTTP API handler
+│       └── mcpserver/       # MCP tool registration
+└── queueprim/               # work queue primitive (module: github.com/propifly/primkit/queueprim)
+    ├── cmd/queueprim/       # main.go entry point
     └── internal/
-        ├── model/           # Entity, Edge, SearchFilter, TraversalOpts, DiscoverOpts
-        ├── store/           # Store interface + SQLite implementation (FTS5, vectors)
-        ├── embed/           # Embedding provider abstraction (Gemini, OpenAI, custom)
-        ├── cli/             # Cobra commands (capture, search, connect, discover, ...)
+        ├── model/           # Job, Filter, Priority, Status, QueueInfo, Stats
+        ├── store/           # Store interface + SQLite implementation
+        ├── cli/             # Cobra commands (enqueue, dequeue, complete, fail, ...)
         ├── api/             # HTTP API handler
         └── mcpserver/       # MCP tool registration
 ```
@@ -80,7 +88,7 @@ Dependencies flow strictly downward. No lateral dependencies between sibling lay
 └──────────────────────────────────────────────────────────┘
 ```
 
-> **Note:** The Embedder interface is unique to knowledgeprim. taskprim and stateprim do not have an embedding layer.
+> **Note:** The Embedder interface is unique to knowledgeprim. The background sweeper goroutine (for expired claim release) is unique to queueprim. taskprim, stateprim, and queueprim do not have an embedding layer.
 
 ### Key Constraint
 
@@ -158,6 +166,27 @@ The Store is the central abstraction. Each primitive defines its own interface i
 | `SetEmbeddingMeta` | Write or overwrite the embedding metadata record |
 | `StripVectors` | Delete all embedding vectors and metadata (reverts to FTS5-only) |
 | `UpdateEntityVector` | Upsert a single entity's embedding vector (used by `re-embed`) |
+| `Close` | Release database connection |
+
+### queueprim Store (16 operations)
+
+| Operation | Description |
+|-----------|-------------|
+| `EnqueueJob` | Persist a new job (store assigns ID, status, timestamps) |
+| `DequeueJob` | Atomically claim the next available job in a queue (status=pending AND visible_after ≤ now) |
+| `CompleteJob` | Mark a claimed job as done; optionally store output payload |
+| `FailJob` | Mark a claimed job as failed; retries if retries remain, otherwise moves to dead |
+| `ReleaseJob` | Return a claimed job to pending immediately (unclaim) |
+| `ExtendJob` | Extend a claimed job's visibility timeout to prevent auto-release |
+| `PeekJob` | Inspect the next available job without claiming it |
+| `GetJob` | Retrieve a single job by ID |
+| `ListJobs` | Filter and list jobs (by queue, status, type, age) |
+| `ListQueues` | All named queues with job counts by status |
+| `Stats` | Aggregate counts across all queues |
+| `PurgeJobs` | Delete jobs matching queue + status + age criteria; returns count |
+| `ExportJobs` | Full export of all jobs in a queue |
+| `ImportJobs` | Bulk import preserving original IDs |
+| `SweepExpiredClaims` | Release claimed jobs whose visibility_after has passed; called by background sweeper |
 | `Close` | Release database connection |
 
 ## Domain Models
@@ -266,6 +295,47 @@ EmbeddingMeta {
 - **Temporal** — entity type distribution over time periods
 - **Weak edges** — edges missing context prose
 
+### queueprim: Job
+
+```
+Job {
+    ID            string           // q_<nanoid>, assigned by store
+    Queue         string           // required: named queue (slashes allowed, e.g., infra/prod)
+    Type          string           // optional: job type category for type-filtered dequeue
+    Priority      Priority         // high | normal (default) | low
+    Payload       json.RawMessage  // required: arbitrary JSON work description
+    Status        Status           // pending → claimed → done | failed | dead
+    ClaimedBy     *string          // set on dequeue: worker name
+    ClaimedAt     *time.Time       // set on dequeue
+    VisibleAfter  time.Time        // delayed jobs: not visible until this time
+    CompletedAt   *time.Time       // set on complete
+    Output        json.RawMessage  // optional: worker result payload
+    FailureReason *string          // set on fail
+    AttemptCount  int              // incremented on each dequeue
+    MaxRetries    int              // 0 = one-shot; >0 = retry up to N times before dead
+    CreatedAt     time.Time        // assigned by store
+    UpdatedAt     time.Time        // assigned by store
+}
+```
+
+**State machine:**
+
+```
+  enqueue()           dequeue()           complete()
+  ─────────► pending ──────────► claimed ──────────► done
+                                    │
+                                    │  fail() + retries remain
+                                    ├──────────────────────── → pending (re-queued)
+                                    │
+                                    │  fail() + retries exhausted
+                                    │  fail(--dead)
+                                    └──────────────────────── → dead
+```
+
+**Priority ordering:** high → normal → low. Within a priority level, ordering is FIFO.
+
+**Visibility timeout:** Claimed jobs hold a `visible_after` lock. If a worker crashes without completing, a background sweeper goroutine releases the claim once `visible_after` passes, returning the job to `pending`.
+
 ## Data Flow
 
 ### CLI Command
@@ -324,7 +394,7 @@ For short-lived CLI commands, the final sync ensures the last WAL changes reach 
 Two restore paths:
 
 - **Auto-restore** (`RestoreIfNeeded`): On startup, if the local DB file doesn't exist but replication is configured, the DB is automatically downloaded from the replica. This enables stateless deployments.
-- **Manual restore** (`taskprim restore` / `stateprim restore` / `knowledgeprim restore`): Point-in-time recovery. Overwrites the local database with the latest replica.
+- **Manual restore** (`taskprim restore` / `stateprim restore` / `knowledgeprim restore` / `queueprim restore`): Point-in-time recovery. Overwrites the local database with the latest replica.
 
 ## Embedding (knowledgeprim only)
 
@@ -418,11 +488,11 @@ Pure Go SQLite via `modernc.org/sqlite` (no CGo). This simplifies cross-compilat
 
 ## Build
 
-The monorepo uses a Go workspace (`go.work`) with four modules. The Makefile provides:
+The monorepo uses a Go workspace (`go.work`) with five modules. The Makefile provides:
 
 | Target | Description |
 |--------|-------------|
-| `make build` | Compile `bin/taskprim`, `bin/stateprim`, and `bin/knowledgeprim` |
+| `make build` | Compile `bin/taskprim`, `bin/stateprim`, `bin/knowledgeprim`, and `bin/queueprim` |
 | `make build-pi` | Cross-compile for ARM64 Linux |
 | `make test` | Run all tests with race detector |
 | `make lint` | Run `go vet` across all modules |

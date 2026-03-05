@@ -10,6 +10,8 @@ body:
       options:
         - taskprim
         - stateprim
+        - knowledgeprim
+        - queueprim
         - primkit (shared library)
         - Replication
         - Configuration

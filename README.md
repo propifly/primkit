@@ -12,21 +12,21 @@
   <a href="https://go.dev/dl/"><img src="https://img.shields.io/badge/Go-1.22+-00ADD8?logo=go&logoColor=white" alt="Go Version"></a>
 </p>
 
-<p align="center"><strong>Infrastructure primitives for AI agents — tasks, state, and knowledge.</strong><br>Single Go binaries with embedded SQLite — no dependencies, no Docker, no database server.</p>
+<p align="center"><strong>Infrastructure primitives for AI agents — tasks, state, knowledge, and work queues.</strong><br>Single Go binaries with embedded SQLite — no dependencies, no Docker, no database server.</p>
 
 - **CLI-first** — agents with shell access (Claude Code, Codex, Cursor) use the CLI directly. No MCP required.
 - **Three interfaces** — CLI, HTTP API, and MCP (Model Context Protocol) from the same binary
-- **Three primitives** — task management, operational state, and knowledge graphs with semantic search
+- **Four primitives** — task management, operational state, knowledge graphs with semantic search, and persistent work queues
 - **Zero config** — database auto-creates on first use. Install the binary, start using it.
 - **SQLite-native** — embedded WAL-mode database with optional cloud replication (S3, R2, B2, GCS)
 
-> **Setting up an agent?** Point it at the [Agent Reference](docs/agent-reference.md) — structured command tables, JSON schemas, and decision trees for all three primitives.
+> **Setting up an agent?** Point it at the [Agent Reference](docs/agent-reference.md) — structured command tables, JSON schemas, and decision trees for all four primitives.
 
 ---
 
 ## Table of Contents
 
-- [Primitives](#primitives) — taskprim + stateprim + knowledgeprim
+- [Primitives](#primitives) — taskprim + stateprim + knowledgeprim + queueprim
 - [Installation](#installation) — pre-built binaries or from source
 - [Quick Start](#quick-start) — get running in 30 seconds
 - [Agent Quick Start](#agent-quick-start) — verify the install programmatically
@@ -107,21 +107,44 @@ knowledgeprim discover --clusters --bridges
 
 **[knowledgeprim Guide](docs/knowledgeprim.md)** — entity types, relationship design, edge context patterns, search strategy, discovery workflows, and agent playbooks.
 
+### queueprim
+
+Persistent work queues for multi-agent pipelines. Jobs have priority, retries, and a dead-letter path. Atomic dequeue prevents double-processing across concurrent workers.
+
+```bash
+# Enqueue a job (auto-creates ~/.queueprim/default.db)
+queueprim enqueue --queue infra/fixes --payload '{"host":"web-01","issue":"disk_full"}'
+
+# Worker atomically claims the next job
+queueprim dequeue --queue infra/fixes --worker johanna
+
+# Mark it done with output
+queueprim complete q_abc123 --output '{"freed_gb":12}'
+
+# Inspect without claiming
+queueprim peek --queue infra/fixes
+
+# List all queues with job counts
+queueprim queues
+```
+
+Job lifecycle: `pending` → `claimed` → `done` / `failed` / `dead`
+
 ## Architecture
 
 ```
-┌──────────────────────────────────────────────────────────────────┐
-│                        primkit (shared)                          │
-│  config · db · auth · server · mcp scaffold · replicate          │
-└─────────┬──────────────────────┬──────────────────────┬──────────┘
-          │                      │                      │
-  ┌───────┴───────┐      ┌──────┴───────┐      ┌───────┴────────┐
-  │   taskprim    │      │  stateprim   │      │ knowledgeprim  │
-  │               │      │              │      │                │
-  │  CLI · API    │      │  CLI · API   │      │  CLI · API     │
-  │  MCP · Store  │      │  MCP · Store │      │  MCP · Store   │
-  └───────────────┘      └──────────────┘      │  Embed · Search│
-                                               └────────────────┘
+┌──────────────────────────────────────────────────────────────────────────┐
+│                          primkit (shared)                                │
+│  config · db · auth · server · mcp scaffold · replicate                  │
+└──────┬───────────────────┬───────────────────┬───────────────┬───────────┘
+       │                   │                   │               │
+┌──────┴──────┐   ┌────────┴──────┐   ┌────────┴───────┐  ┌───┴──────────┐
+│  taskprim   │   │  stateprim    │   │ knowledgeprim  │  │  queueprim   │
+│             │   │               │   │                │  │              │
+│ CLI · API   │   │  CLI · API    │   │  CLI · API     │  │ CLI · API    │
+│ MCP · Store │   │  MCP · Store  │   │  MCP · Store   │  │ MCP · Store  │
+└─────────────┘   └───────────────┘   │  Embed · Search│  │ Sweeper      │
+                                      └────────────────┘  └──────────────┘
 ```
 
 Each primitive is a **single Go binary** with three access modes:
@@ -143,27 +166,31 @@ Download the latest release for your platform. Install only the primitives you n
 curl -sL https://github.com/propifly/primkit/releases/latest/download/taskprim_0.1.0_darwin_arm64.tar.gz | tar xz
 curl -sL https://github.com/propifly/primkit/releases/latest/download/stateprim_0.1.0_darwin_arm64.tar.gz | tar xz
 curl -sL https://github.com/propifly/primkit/releases/latest/download/knowledgeprim_0.1.0_darwin_arm64.tar.gz | tar xz
+curl -sL https://github.com/propifly/primkit/releases/latest/download/queueprim_0.1.0_darwin_arm64.tar.gz | tar xz
 
 # macOS (Intel)
 curl -sL https://github.com/propifly/primkit/releases/latest/download/taskprim_0.1.0_darwin_amd64.tar.gz | tar xz
 curl -sL https://github.com/propifly/primkit/releases/latest/download/stateprim_0.1.0_darwin_amd64.tar.gz | tar xz
 curl -sL https://github.com/propifly/primkit/releases/latest/download/knowledgeprim_0.1.0_darwin_amd64.tar.gz | tar xz
+curl -sL https://github.com/propifly/primkit/releases/latest/download/queueprim_0.1.0_darwin_amd64.tar.gz | tar xz
 
 # Linux (x86_64)
 curl -sL https://github.com/propifly/primkit/releases/latest/download/taskprim_0.1.0_linux_amd64.tar.gz | tar xz
 curl -sL https://github.com/propifly/primkit/releases/latest/download/stateprim_0.1.0_linux_amd64.tar.gz | tar xz
 curl -sL https://github.com/propifly/primkit/releases/latest/download/knowledgeprim_0.1.0_linux_amd64.tar.gz | tar xz
+curl -sL https://github.com/propifly/primkit/releases/latest/download/queueprim_0.1.0_linux_amd64.tar.gz | tar xz
 
 # Linux (ARM64 / Raspberry Pi)
 curl -sL https://github.com/propifly/primkit/releases/latest/download/taskprim_0.1.0_linux_arm64.tar.gz | tar xz
 curl -sL https://github.com/propifly/primkit/releases/latest/download/stateprim_0.1.0_linux_arm64.tar.gz | tar xz
 curl -sL https://github.com/propifly/primkit/releases/latest/download/knowledgeprim_0.1.0_linux_arm64.tar.gz | tar xz
+curl -sL https://github.com/propifly/primkit/releases/latest/download/queueprim_0.1.0_linux_arm64.tar.gz | tar xz
 ```
 
 Move to your PATH:
 
 ```bash
-sudo mv taskprim stateprim knowledgeprim /usr/local/bin/
+sudo mv taskprim stateprim knowledgeprim queueprim /usr/local/bin/
 ```
 
 Or use `gh`:
@@ -180,7 +207,7 @@ Requires [Go 1.22+](https://go.dev/dl/):
 git clone https://github.com/propifly/primkit.git
 cd primkit
 make build
-# Binaries: bin/taskprim, bin/stateprim, bin/knowledgeprim
+# Binaries: bin/taskprim, bin/stateprim, bin/knowledgeprim, bin/queueprim
 ```
 
 ## Quick Start
@@ -239,6 +266,20 @@ knowledgeprim connect --source e_abc --target e_def --relationship relates_to \
 knowledgeprim related e_abc --depth 2
 ```
 
+### queueprim
+
+```bash
+# Enqueue a job (auto-creates ~/.queueprim/default.db)
+queueprim enqueue --queue tasks/default --payload '{"action":"reindex"}'
+
+# Worker claims and processes it
+queueprim dequeue --queue tasks/default --worker agent-01
+
+# Complete or fail it
+queueprim complete q_abc123
+queueprim fail q_abc123 --reason "upstream timeout"
+```
+
 ## Agent Quick Start
 
 Three commands to verify the install:
@@ -268,11 +309,18 @@ knowledgeprim capture --type test --title "Hello world" --source agent
 knowledgeprim search "hello"
 ```
 
+For queueprim:
+
+```bash
+queueprim enqueue --queue test --payload '{"ping":true}'
+queueprim dequeue --queue test --worker agent
+```
+
 No config file needed. The database is created automatically on first use.
 
 ## HTTP API
 
-All three primitives can run as HTTP servers:
+All primitives can run as HTTP servers:
 
 ```bash
 # taskprim on port 8090
@@ -283,6 +331,9 @@ stateprim serve --port 8091
 
 # knowledgeprim on port 8092
 knowledgeprim serve --port 8092
+
+# queueprim on port 8093
+queueprim serve --port 8093
 ```
 
 <details>
@@ -345,6 +396,27 @@ knowledgeprim serve --port 8092
 
 </details>
 
+<details>
+<summary><strong>queueprim endpoints</strong></summary>
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `POST` | `/v1/jobs` | Enqueue a job |
+| `GET` | `/v1/jobs` | List jobs (filter by queue, status, type) |
+| `GET` | `/v1/jobs/{id}` | Get a job |
+| `POST` | `/v1/queues/{queue}/dequeue` | Atomically claim the next job |
+| `POST` | `/v1/jobs/{id}/complete` | Mark a job done |
+| `POST` | `/v1/jobs/{id}/fail` | Mark a job failed (retries or dead-letter) |
+| `POST` | `/v1/jobs/{id}/release` | Return a claimed job to pending |
+| `POST` | `/v1/jobs/{id}/extend` | Extend a claimed job's visibility timeout |
+| `GET` | `/v1/queues` | List all queues with job counts |
+| `GET` | `/v1/stats` | Aggregate stats |
+| `DELETE` | `/v1/queues/{queue}` | Purge jobs by status and age |
+
+Queue names may contain slashes (e.g., `infra/prod`). `dequeue` returns `204 No Content` when the queue is empty.
+
+</details>
+
 ### Authentication
 
 When auth keys are configured, all API requests require a Bearer token:
@@ -358,18 +430,20 @@ curl -H "Authorization: Bearer tp_sk_your_key_here" \
 
 > **When to use MCP vs CLI:** If your agent has shell access (Claude Code, Codex, terminal-based agents), the CLI is the simplest and most reliable option — agents are trained on CLI tools and can pipe, chain, and compose them naturally. MCP is ideal for IDE integrations (Claude Desktop, Cursor, VS Code) where there's no terminal access.
 
-All three primitives can run as MCP servers for direct AI agent integration:
+All primitives can run as MCP servers for direct AI agent integration:
 
 ```bash
 # stdio transport (local agent on same machine)
 taskprim mcp --transport stdio
 stateprim mcp --transport stdio
 knowledgeprim mcp --transport stdio
+queueprim mcp --transport stdio
 
 # SSE transport (remote agent over HTTP)
 taskprim mcp --transport sse --port 8091
 stateprim mcp --transport sse --port 8092
 knowledgeprim mcp --transport sse --port 8093
+queueprim mcp --transport sse --port 8094
 ```
 
 ### Claude Code configuration
@@ -389,6 +463,10 @@ Add to your project's `.mcp.json`:
     },
     "knowledgeprim": {
       "command": "knowledgeprim",
+      "args": ["mcp", "--transport", "stdio"]
+    },
+    "queueprim": {
+      "command": "queueprim",
       "args": ["mcp", "--transport", "stdio"]
     }
   }
@@ -415,6 +493,10 @@ Add to your `claude_desktop_config.json`:
     "knowledgeprim": {
       "command": "/usr/local/bin/knowledgeprim",
       "args": ["mcp", "--transport", "stdio"]
+    },
+    "queueprim": {
+      "command": "/usr/local/bin/queueprim",
+      "args": ["mcp", "--transport", "stdio"]
     }
   }
 }
@@ -428,6 +510,8 @@ Add to your `claude_desktop_config.json`:
 **stateprim** (10 tools): `stateprim_set`, `stateprim_get`, `stateprim_has`, `stateprim_set_if_new`, `stateprim_append`, `stateprim_delete`, `stateprim_query`, `stateprim_purge`, `stateprim_namespaces`, `stateprim_stats`
 
 **knowledgeprim** (14 tools): `knowledgeprim_capture`, `knowledgeprim_search`, `knowledgeprim_get`, `knowledgeprim_related`, `knowledgeprim_connect`, `knowledgeprim_strengthen`, `knowledgeprim_edge_edit`, `knowledgeprim_disconnect`, `knowledgeprim_edit`, `knowledgeprim_delete`, `knowledgeprim_discover`, `knowledgeprim_types`, `knowledgeprim_relationships`, `knowledgeprim_stats`
+
+**queueprim** (11 tools): `queueprim_enqueue`, `queueprim_dequeue`, `queueprim_complete`, `queueprim_fail`, `queueprim_release`, `queueprim_extend`, `queueprim_peek`, `queueprim_list`, `queueprim_get`, `queueprim_queues`, `queueprim_stats`
 
 </details>
 
@@ -457,11 +541,12 @@ Every config value can be overridden with environment variables:
 | `TASKPRIM_DB` | `storage.db` (for taskprim) |
 | `STATEPRIM_DB` | `storage.db` (for stateprim) |
 | `KNOWLEDGEPRIM_DB` | `storage.db` (for knowledgeprim) |
+| `QUEUEPRIM_DB` | `storage.db` (for queueprim) |
 | `TASKPRIM_LIST` | Default list for new tasks |
 
 ### Global flags
 
-All three binaries accept:
+All binaries accept:
 
 ```
 --db <path>        Path to SQLite database
@@ -506,7 +591,15 @@ primkit/
 │       ├── cli/              #   Cobra commands (19 commands)
 │       ├── api/              #   HTTP API handler
 │       └── mcpserver/        #   MCP tool registrations
-├── go.work                   # Go workspace (4 modules)
+├── queueprim/                # Work queue primitive
+│   ├── cmd/queueprim/        #   Binary entrypoint
+│   └── internal/
+│       ├── model/            #   Job, Filter, Priority, Status, QueueInfo, Stats
+│       ├── store/            #   Store interface + SQLite impl
+│       ├── cli/              #   Cobra commands (15 commands)
+│       ├── api/              #   HTTP API handler
+│       └── mcpserver/        #   MCP tool registrations
+├── go.work                   # Go workspace (5 modules)
 ├── Makefile                  # build, test, lint, fmt, tidy, build-pi
 └── config.example.yaml       # Configuration template
 ```
@@ -522,8 +615,8 @@ primkit/
 ### Build & test
 
 ```bash
-make build          # Build all three binaries
-make test           # Run all tests (348 tests across 4 modules)
+make build          # Build all four binaries
+make test           # Run all tests across all modules
 make lint           # Run go vet on all modules
 make fmt            # Format all code
 make tidy           # Tidy all go.mod files
@@ -540,6 +633,7 @@ make test
 cd taskprim && go test -v ./...
 cd stateprim && go test -v ./...
 cd knowledgeprim && go test -v ./...
+cd queueprim && go test -v ./...
 cd primkit && go test -v ./...
 ```
 
@@ -566,6 +660,7 @@ Tests use **in-memory SQLite** — no disk I/O, no cleanup, fast and isolated.
 - [x] taskprim (model, store, CLI, HTTP API, MCP)
 - [x] stateprim (model, store, CLI, HTTP API, MCP)
 - [x] knowledgeprim (entities, edges, FTS5 + vector search, discovery, CLI, HTTP API, MCP)
+- [x] queueprim (persistent work queues, priority, retries, dead-letter, CLI, HTTP API, MCP)
 - [x] Litestream replication to object storage (S3, R2, B2, GCS)
 - [x] GitHub Actions CI pipeline
 - [x] Pre-built binaries (GoReleaser)

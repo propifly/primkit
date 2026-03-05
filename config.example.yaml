@@ -1,12 +1,12 @@
 # Primkit configuration file.
-# All three primitives (taskprim, stateprim, knowledgeprim) read this format.
+# All four primitives (taskprim, stateprim, knowledgeprim, queueprim) read this format.
 # Copy to config.yaml and edit. Each primitive uses its own config file.
 # Environment variables override any value here (see docs for prefix rules).
 # Use ${ENV_VAR} syntax for secrets — they're interpolated at startup.
 
 storage:
   # Path to the SQLite database file. Created automatically if it doesn't exist.
-  # Override: TASKPRIM_DB, STATEPRIM_DB, or KNOWLEDGEPRIM_DB
+  # Override: TASKPRIM_DB, STATEPRIM_DB, KNOWLEDGEPRIM_DB, or QUEUEPRIM_DB
   db: ~/.taskprim/default.db
 
   # Litestream replication (optional). Embeds Litestream as a Go library —
@@ -32,10 +32,12 @@ auth:
   #   name: "johanna"
   # - key: "kp_sk_your_api_key_here"
   #   name: "thomas"
+  # - key: "qp_sk_your_api_key_here"
+  #   name: "worker-01"
 
 # HTTP server settings (serve mode and MCP SSE transport).
 server:
-  port: 8090                  # taskprim: 8090, stateprim: 8091, knowledgeprim: 8092
+  port: 8090                  # taskprim: 8090, stateprim: 8091, knowledgeprim: 8092, queueprim: 8093
 
 # taskprim-specific settings.
 taskprim:
