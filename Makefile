@@ -42,7 +42,9 @@ tidy:
 	cd taskprim && go mod tidy
 	cd stateprim && go mod tidy
 	cd knowledgeprim && go mod tidy
-	cd queueprim && go mod tidy
+	# go mod tidy adds primkit (workspace-local private module) to go.mod; strip it
+	# so CI doesn't try to download/verify the private repo version.
+	cd queueprim && go mod tidy; go mod edit -droprequire=github.com/propifly/primkit/primkit; grep -v "propifly/primkit/primkit" go.sum > go.sum.tmp && mv go.sum.tmp go.sum || true
 
 clean:
 	rm -rf bin/

@@ -91,9 +91,9 @@ func (j *Job) Validate() error {
 // Filter specifies which jobs to return from ListJobs. All fields are optional;
 // an empty filter returns all jobs across all queues.
 type Filter struct {
-	Queue     string  // only jobs in this queue
-	Status    *Status // only jobs in this status (nil = all)
-	Type      string  // only jobs of this type
+	Queue     string        // only jobs in this queue
+	Status    *Status       // only jobs in this status (nil = all)
+	Type      string        // only jobs of this type
 	OlderThan time.Duration // only jobs created/updated before now-OlderThan
 }
 
