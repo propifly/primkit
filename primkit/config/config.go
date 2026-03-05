@@ -97,16 +97,38 @@ func Load(path string) (*Config, error) {
 	return &cfg, nil
 }
 
-// LoadWithEnvOverrides loads a config file and then applies environment variable
-// overrides. The prefix determines which env vars apply (e.g., "TASKPRIM" means
-// TASKPRIM_DB overrides storage.db, TASKPRIM_SERVER_PORT overrides server.port).
+// LoadWithEnvOverrides loads a config file and optionally applies environment
+// variable overrides based on whether a config file was explicitly provided.
+//
+// Behaviour depends on whether path is set:
+//
+//   - No config file (path == ""): env vars with the given prefix are applied as
+//     the primary configuration mechanism. Useful for container and CI deployments
+//     where mounting a config file is impractical.
+//     Effective precedence: env var → hardcoded default.
+//
+//   - Config file provided (path != ""): the file is authoritative and env var
+//     overrides are NOT applied. This is the correct behaviour for multi-agent
+//     deployments where each agent passes its own --config file — a global env
+//     var (e.g. TASKPRIM_DB=/shared.db) must not silently override per-agent
+//     configuration. Use ${VAR} interpolation inside the YAML to inject secrets
+//     or other dynamic values while still keeping the file authoritative.
+//     Effective precedence: config file → hardcoded default.
+//
+// In both cases the --db CLI flag takes top priority (handled in root.go before
+// this function is called).
 func LoadWithEnvOverrides(path, prefix string) (*Config, error) {
 	cfg, err := Load(path)
 	if err != nil {
 		return nil, err
 	}
 
-	applyEnvOverrides(cfg, prefix)
+	// Env overrides are the no-config fallback, not a global override on top of
+	// an explicit config file. When a config file is present it wins.
+	if path == "" {
+		applyEnvOverrides(cfg, prefix)
+	}
+
 	return cfg, nil
 }
 
@@ -125,9 +147,10 @@ func InterpolateEnvVars(data []byte) []byte {
 // interpolateEnvVars is the unexported alias kept for internal use.
 func interpolateEnvVars(data []byte) []byte { return InterpolateEnvVars(data) }
 
-// applyEnvOverrides checks for environment variables with the given prefix
-// and overwrites matching config fields. For example, with prefix "TASKPRIM":
-//   - TASKPRIM_DB         → storage.db
+// applyEnvOverrides checks for environment variables with the given prefix and
+// fills in config fields. Called only when no config file was provided (see
+// LoadWithEnvOverrides). For example, with prefix "TASKPRIM":
+//   - TASKPRIM_DB          → storage.db
 //   - TASKPRIM_SERVER_PORT → server.port
 func applyEnvOverrides(cfg *Config, prefix string) {
 	if v := os.Getenv(prefix + "_DB"); v != "" {

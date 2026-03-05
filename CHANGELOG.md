@@ -6,6 +6,30 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Fixed
+
+- **all prims**: Global env vars (`TASKPRIM_DB`, `STATEPRIM_DB`, `KNOWLEDGEPRIM_DB`,
+  `*_SERVER_PORT`, `*_REPLICATE_*`) no longer override per-agent config files in
+  multi-agent deployments. Previously, `LoadWithEnvOverrides` always applied env var
+  overrides on top of the YAML file, so a single global env var would silently stomp
+  the `storage.db` (or any other field) from every agent's `--config` file. The fix
+  makes env var overrides conditional on the config file being absent: when `--config`
+  is provided the file is authoritative; when it is absent env vars serve as the
+  primary configuration mechanism (unchanged for container / CI deployments). Use
+  `${VAR}` interpolation inside the YAML to inject secrets while keeping the file
+  authoritative. The same guard is applied to the direct `os.Getenv` call in each
+  prim's `PersistentPreRunE`.
+
+  **Before (broken):**
+  ```
+  Effective precedence (always): --db flag → *PRIM_DB env var → storage.db config → default
+  ```
+  **After (fixed):**
+  ```
+  With --config:    --db flag → storage.db from config file → default
+  Without --config: --db flag → *PRIM_DB env var → default
+  ```
+
 ## [v0.3.0] - 2026-03-05
 
 ### Fixed
