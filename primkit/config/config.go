@@ -110,15 +110,20 @@ func LoadWithEnvOverrides(path, prefix string) (*Config, error) {
 	return cfg, nil
 }
 
-// interpolateEnvVars replaces all ${VAR_NAME} patterns in the raw YAML bytes
+// InterpolateEnvVars replaces all ${VAR_NAME} patterns in the raw YAML bytes
 // with corresponding environment variable values. Missing vars resolve to "".
-func interpolateEnvVars(data []byte) []byte {
+// Exported so callers that parse YAML outside the standard Load path (e.g.
+// extended config sections) can apply the same expansion.
+func InterpolateEnvVars(data []byte) []byte {
 	return envVarPattern.ReplaceAllFunc(data, func(match []byte) []byte {
 		// Extract variable name from ${VAR_NAME}.
 		varName := string(match[2 : len(match)-1])
 		return []byte(os.Getenv(varName))
 	})
 }
+
+// interpolateEnvVars is the unexported alias kept for internal use.
+func interpolateEnvVars(data []byte) []byte { return InterpolateEnvVars(data) }
 
 // applyEnvOverrides checks for environment variables with the given prefix
 // and overwrites matching config fields. For example, with prefix "TASKPRIM":

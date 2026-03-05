@@ -215,6 +215,7 @@ func loadEmbedConfig(configPath string) embed.Config {
 	if configPath != "" {
 		data, err := os.ReadFile(configPath)
 		if err == nil {
+			data = config.InterpolateEnvVars(data)
 			_ = yaml.Unmarshal(data, &ext)
 		}
 	}
