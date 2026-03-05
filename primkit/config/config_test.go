@@ -72,17 +72,22 @@ func TestLoad_MalformedYAML(t *testing.T) {
 	assert.Contains(t, err.Error(), "parsing config file")
 }
 
-func TestLoadWithEnvOverrides(t *testing.T) {
+// TestLoadWithEnvOverrides_ConfigFileWinsWhenPathSet verifies that when a config
+// file path is provided, env var overrides are NOT applied — the config file is
+// authoritative. This is the correct behaviour for multi-agent deployments where
+// each agent has its own --config file.
+func TestLoadWithEnvOverrides_ConfigFileWinsWhenPathSet(t *testing.T) {
 	t.Setenv("TASKPRIM_DB", "/override/path.db")
 	t.Setenv("TASKPRIM_SERVER_PORT", "7777")
 
 	cfg, err := LoadWithEnvOverrides(filepath.Join("testdata", "valid.yaml"), "TASKPRIM")
 	require.NoError(t, err)
 
-	assert.Equal(t, "/override/path.db", cfg.Storage.DB,
-		"TASKPRIM_DB should override storage.db from file")
-	assert.Equal(t, 7777, cfg.Server.Port,
-		"TASKPRIM_SERVER_PORT should override server.port from file")
+	// Config file must win — env vars are not applied when a file is present.
+	assert.Equal(t, "/tmp/test.db", cfg.Storage.DB,
+		"config file storage.db must win over TASKPRIM_DB when --config is provided")
+	assert.Equal(t, 9090, cfg.Server.Port,
+		"config file server.port must win over TASKPRIM_SERVER_PORT when --config is provided")
 }
 
 func TestLoadWithEnvOverrides_ReplicateEnabled(t *testing.T) {
@@ -159,8 +164,10 @@ func TestLoad_R2AllFieldsInterpolated(t *testing.T) {
 		"${R2_SECRET_ACCESS_KEY} must be expanded in storage.replicate.secret_access_key")
 }
 
-// Regression test: env var override wins over the config file value for storage.db.
-func TestLoad_StorageDBEnvOverrideWins(t *testing.T) {
+// Regression test: when a config file IS provided, its storage.db wins over the
+// env var. Previously env vars stomped per-agent config files, breaking
+// multi-agent deployments.
+func TestLoadWithEnvOverrides_ConfigFileWinsOverEnvVar(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "config.yaml")
 	require.NoError(t, os.WriteFile(path, []byte("storage:\n  db: /from/config.db\n"), 0644))
@@ -169,6 +176,45 @@ func TestLoad_StorageDBEnvOverrideWins(t *testing.T) {
 
 	cfg, err := LoadWithEnvOverrides(path, "STATEPRIM")
 	require.NoError(t, err)
+	assert.Equal(t, "/from/config.db", cfg.Storage.DB,
+		"config file storage.db must win over STATEPRIM_DB env var when --config is provided")
+}
+
+// Regression test: when NO config file is provided, the env var is still used.
+// This validates that the no-config / container deployment path remains intact.
+func TestLoadWithEnvOverrides_EnvVarAppliedWithoutConfigFile(t *testing.T) {
+	t.Setenv("STATEPRIM_DB", "/from/env.db")
+
+	cfg, err := LoadWithEnvOverrides("", "STATEPRIM")
+	require.NoError(t, err)
 	assert.Equal(t, "/from/env.db", cfg.Storage.DB,
-		"STATEPRIM_DB env var must override storage.db from config file")
+		"STATEPRIM_DB env var must be used when no config file is provided")
+}
+
+// Regression test: multi-agent scenario — two agents each have their own config
+// file pointing to different databases. A global env var in the environment must
+// NOT override either agent's per-instance config.
+func TestLoadWithEnvOverrides_MultiAgentConfigFilesNotStompedByGlobalEnvVar(t *testing.T) {
+	dir := t.TempDir()
+
+	agentAConfig := filepath.Join(dir, "agent-a.yaml")
+	agentBConfig := filepath.Join(dir, "agent-b.yaml")
+	require.NoError(t, os.WriteFile(agentAConfig, []byte("storage:\n  db: /data/agent-a.db\n"), 0644))
+	require.NoError(t, os.WriteFile(agentBConfig, []byte("storage:\n  db: /data/agent-b.db\n"), 0644))
+
+	// Simulate a global env var present in the deployment environment.
+	t.Setenv("TASKPRIM_DB", "/data/global-override.db")
+
+	cfgA, err := LoadWithEnvOverrides(agentAConfig, "TASKPRIM")
+	require.NoError(t, err)
+
+	cfgB, err := LoadWithEnvOverrides(agentBConfig, "TASKPRIM")
+	require.NoError(t, err)
+
+	assert.Equal(t, "/data/agent-a.db", cfgA.Storage.DB,
+		"agent A config file must win over global TASKPRIM_DB env var")
+	assert.Equal(t, "/data/agent-b.db", cfgB.Storage.DB,
+		"agent B config file must win over global TASKPRIM_DB env var")
+	assert.NotEqual(t, cfgA.Storage.DB, cfgB.Storage.DB,
+		"each agent must use its own database")
 }

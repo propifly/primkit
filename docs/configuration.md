@@ -4,11 +4,28 @@ All three primitives (**taskprim**, **stateprim**, and **knowledgeprim**) read t
 
 ## Resolution Order
 
-Configuration values are resolved in three layers (highest precedence wins):
+Configuration is resolved differently depending on whether you pass `--config`.
 
-1. **Defaults** — hardcoded sensible values (e.g., port 8090)
-2. **YAML file** — values from your `config.yaml`, with `${ENV_VAR}` interpolation
-3. **Environment overrides** — prefix-based env vars (`TASKPRIM_*`, `STATEPRIM_*`, or `KNOWLEDGEPRIM_*`)
+### With `--config` (recommended for multi-agent deployments)
+
+Highest precedence wins:
+
+1. **`--db` / `--port` CLI flags** — explicit per-invocation overrides
+2. **YAML file** — values from your config file, with `${ENV_VAR}` interpolation for secrets
+3. **Hardcoded defaults** — e.g., port 8090
+
+Environment variable overrides (`TASKPRIM_DB`, etc.) are **not applied** when a
+config file is present. This prevents a global env var from silently overriding
+per-agent configuration in multi-agent deployments. Use `${VAR}` interpolation
+inside the YAML when you need to inject a dynamic value.
+
+### Without `--config` (env-only / container deployments)
+
+Highest precedence wins:
+
+1. **`--db` / `--port` CLI flags**
+2. **Environment overrides** — prefix-based env vars (`TASKPRIM_*`, `STATEPRIM_*`, `KNOWLEDGEPRIM_*`)
+3. **Hardcoded defaults**
 
 ## Full YAML Spec
 
@@ -146,7 +163,15 @@ This lets you keep secrets out of the config file while still having a single fi
 
 ## Environment Variable Overrides
 
-Environment variables with the appropriate prefix override any value from the YAML file. This is useful for container deployments or CI where you don't want to mount a config file.
+Environment variables with the appropriate prefix are used when **no `--config` file
+is provided**. They are the primary configuration mechanism for container and CI
+deployments where mounting a config file is impractical.
+
+> **Multi-agent note:** If you run multiple primitive instances each with its own
+> `--config` file (e.g. `taskprim --config /configs/agent-a.yaml serve`), env var
+> overrides are skipped and each instance uses its own file exclusively. Use
+> `${VAR}` interpolation inside the YAML to inject secrets while keeping the file
+> authoritative.
 
 ### taskprim prefix: `TASKPRIM_`
 
@@ -249,7 +274,7 @@ export TASKPRIM_REPLICATE_SECRET_ACCESS_KEY=secret...
 taskprim serve
 ```
 
-When no `--config` flag is provided, defaults are used and then env overrides are applied.
+When no `--config` flag is provided, defaults are used and env overrides are applied as the primary configuration mechanism.
 
 ### knowledgeprim with Gemini embedding
 
@@ -283,13 +308,27 @@ Works immediately. Full-text search, manual edges, graph traversal, and discover
 
 ## Database Path Resolution
 
-The database path is resolved in this order:
+The database path is resolved in priority order. The rules differ based on whether
+`--config` is provided:
 
-1. `--db` flag (if provided)
-2. Environment variable (`TASKPRIM_DB`, `STATEPRIM_DB`, or `KNOWLEDGEPRIM_DB`)
-3. Home directory default (`~/.taskprim/default.db`, `~/.stateprim/default.db`, or `~/.knowledgeprim/default.db`)
+**With `--config /path/to/config.yaml`** (per-agent configuration):
 
-The directory is created automatically if it doesn't exist.
+| Priority | Source |
+|----------|--------|
+| 1 | `--db` flag |
+| 2 | `storage.db` in the config file |
+| 3 | Home directory default (`~/.taskprim/default.db`, etc.) |
+
+**Without `--config`** (env-only / container deployments):
+
+| Priority | Source |
+|----------|--------|
+| 1 | `--db` flag |
+| 2 | `TASKPRIM_DB` / `STATEPRIM_DB` / `KNOWLEDGEPRIM_DB` env var |
+| 3 | Home directory default (`~/.taskprim/default.db`, etc.) |
+
+The database file and its parent directory are created automatically if they do not
+exist.
 
 ## SQLite Pragmas
 

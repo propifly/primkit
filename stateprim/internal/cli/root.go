@@ -72,16 +72,23 @@ MCP server (mcp). All share the same SQLite database.`,
 	// and injects the store into the command's context. This is lazy — if
 	// you run "stateprim --help", the database is never opened.
 	root.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
-		if dbPath == "" {
+		// Only consult the env var when no config file was specified.
+		// When --config is given the file is authoritative; the env var must
+		// not stomp per-agent configuration in multi-agent deployments.
+		if dbPath == "" && configPath == "" {
 			dbPath = os.Getenv("STATEPRIM_DB")
 		}
 
 		// Load config for replication settings and DB path fallback.
+		// When configPath != "" env overrides are skipped inside this call.
 		cfg, err := config.LoadWithEnvOverrides(configPath, "STATEPRIM")
 		if err != nil {
 			return fmt.Errorf("loading config: %w", err)
 		}
 
+		// Resolve database path:
+		//   With --config:    --db flag → storage.db from config file → default
+		//   Without --config: --db flag → STATEPRIM_DB env var → default
 		if dbPath == "" {
 			dbPath = cfg.Storage.DB
 		}
