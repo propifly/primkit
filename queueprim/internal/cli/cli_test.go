@@ -444,7 +444,7 @@ func TestPurge_RequiresStatus(t *testing.T) {
 	s := newTestStore(t)
 	_, err := execCmd(t, s, "purge", "q")
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), "--status is required")
+	assert.Contains(t, err.Error(), "status")
 }
 
 func TestPurge_DoneJobs(t *testing.T) {

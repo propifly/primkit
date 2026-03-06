@@ -51,6 +51,7 @@ func newPurgeCmd() *cobra.Command {
 
 	cmd.Flags().StringVar(&status, "status", "", "status to purge: done, dead, failed (required)")
 	cmd.Flags().StringVar(&olderThan, "older-than", "", "only purge jobs older than this duration, e.g. 7d, 24h")
+	_ = cmd.MarkFlagRequired("status")
 
 	return cmd
 }

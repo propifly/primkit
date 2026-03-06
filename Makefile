@@ -1,7 +1,7 @@
-.PHONY: all build build-pi test lint fmt tidy clean
+.PHONY: all build build-pi test lint fmt tidy clean docs docs-check
 
 # Build both binaries for the current platform.
-all: tidy fmt lint test build
+all: tidy fmt lint test build docs-check
 
 build:
 	cd taskprim && go build -o ../bin/taskprim ./cmd/taskprim
@@ -48,3 +48,10 @@ tidy:
 
 clean:
 	rm -rf bin/
+
+# Documentation generation
+docs:
+	bash scripts/docgen.sh
+
+docs-check:
+	bash scripts/docgen.sh --check

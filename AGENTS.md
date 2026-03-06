@@ -106,3 +106,43 @@ knowledgeprim additionally has `internal/embed/` for the embedding provider abst
 - Add CGo dependencies (breaks cross-compilation)
 - Commit database files, config.yaml, or .env files
 - Force push to main
+
+## Documentation maintenance
+
+The `docs/agent-reference.md` command tables are auto-generated from each primitive's Cobra command tree. Hand-written sections (schemas, idempotency tables, decision trees) are preserved — only the content between anchor comments is replaced.
+
+### Regenerate docs
+
+```bash
+make docs        # Regenerate docs/agent-reference.md
+make docs-check  # Check that docs are up to date (used in CI)
+```
+
+### How it works
+
+1. Each primitive has a `cmd/docgen/main.go` that walks its Cobra command tree and emits JSON metadata to stdout.
+2. `primkit/cmd/docupdater/main.go` reads the JSON files and rewrites the anchored sections in `docs/agent-reference.md`.
+3. `scripts/docgen.sh` orchestrates both steps.
+
+### Anchor format
+
+Each prim's Commands table is wrapped in HTML comment anchors:
+
+```
+<!-- docgen:start:<primname>:commands -->
+| Command | Synopsis | Flags |
+...
+<!-- docgen:end:<primname>:commands -->
+```
+
+Do not edit content inside these anchors manually — it will be overwritten by the next `make docs` run.
+
+### When to run make docs
+
+Run `make docs` after any change to:
+- CLI flags (adding, removing, or renaming flags)
+- Adding or removing commands
+- Changing command `Use` strings or `Short` descriptions
+- Adding `MarkFlagRequired` to a command
+
+CI runs `make docs-check` on every pull request and will fail if the docs are out of date.

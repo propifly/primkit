@@ -1,5 +1,9 @@
 # Binaries (only in bin/, not the source directories)
 /bin/
+
+# docgen binaries (go build artifacts from cmd/docgen and cmd/docupdater)
+*/docgen
+primkit/docupdater
 *.exe
 *.exe~
 *.dll

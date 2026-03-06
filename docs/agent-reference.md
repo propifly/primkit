@@ -44,11 +44,13 @@ No configuration required. Databases auto-create on first use at `~/<primitive>/
 
 ## Global Flags (all primitives)
 
-| Flag | Type | Default | Description |
-|------|------|---------|-------------|
-| `--db` | string | `~/<primitive>/default.db` | Path to SQLite database |
-| `--config` | string | `config.yaml` | Path to config file |
-| `--format` | string | `text` | Output format: `text`, `json` (taskprim also supports `quiet`) |
+
+| Flag       | Type   | Default                    | Description                                                    |
+| ---------- | ------ | -------------------------- | -------------------------------------------------------------- |
+| `--db`     | string | `~/<primitive>/default.db` | Path to SQLite database                                        |
+| `--config` | string | `config.yaml`              | Path to config file                                            |
+| `--format` | string | `text`                     | Output format: `text`, `json` (taskprim also supports `quiet`) |
+
 
 Always use `--format json` for programmatic consumption.
 
@@ -60,22 +62,26 @@ Task management with lifecycle tracking. Tasks follow: `open` -> `done` | `kille
 
 ### Commands
 
-| Command | Args | Required Flags | Optional Flags |
-|---------|------|---------------|----------------|
-| `add <what>` | task description | `--list` | `--source`, `--label` (repeatable), `--waiting-on`, `--context`, `--parent` |
-| `list` | — | — | `--list`, `--state` (open/done/killed), `--label`, `--source`, `--unseen-by`, `--seen-by`, `--since`, `--stale`, `--parent`, `--waiting`, `--format` |
-| `get <id>` | task ID | — | — |
-| `done <id>` | task ID | — | `--reason` |
-| `kill <id>` | task ID | — | `--reason` |
-| `edit <id>` | task ID | — | `--what`, `--list`, `--waiting-on`, `--context`, `--parent`, `--add-label`, `--del-label` |
-| `seen <agent>` | agent name | — | `--ids` (repeatable) |
-| `labels` | — | — | — |
-| `label clear <id> <label>` | task ID, label | — | — |
-| `lists` | — | — | — |
-| `stats` | — | — | — |
-| `export` | — | — | `--list`, `--state` |
-| `import` | — | — | — |
-| `restore` | — | — | `--timestamp`, `--source` |
+
+<!-- docgen:start:taskprim:commands -->
+| Command | Synopsis | Flags |
+|---------|----------|-------|
+| `add` | `add <what>` | `--context` — additional context or notes; `--label` (default: `[]`) — labels (repeatable or comma-separated); `--list` (default: `default`) — list to add the task to; `--parent` — parent task ID for subtasks; `--source` (default: `cli`) — who created this task; `--waiting-on` — what this task is blocked on |
+| `done` | `done <id> [id...]` | — |
+| `edit` | `edit <id>` | `--add-label` (default: `[]`) — add labels (repeatable); `--context` — update context notes; `--del-label` (default: `[]`) — remove labels (repeatable); `--list` — move to a different list; `--parent` — set or clear parent task ID; `--waiting-on` — set or clear (empty string) waiting_on; `--what` — update the task description |
+| `export` | `export` | `--list` — export only tasks from this list; `--state` — export only tasks in this state |
+| `get` | `get <id>` | — |
+| `import` | `import` | `--file` — path to JSON file (default: stdin) |
+| `kill` | `kill <id>` | `--reason` — why this task is being dropped (required) |
+| `labels` | `labels` | `--list` — only labels from tasks in this list |
+| `labels clear` | `labels clear <label>` | `--list` — only clear from tasks in this list |
+| `list` | `list` | `--label` (default: `[]`) — filter by label (repeatable, AND logic); `--list` — filter by list; `--seen-by` — tasks seen by this agent (use with --since); `--since` — time window for --seen-by (e.g., 24h, 7d); `--source` — filter by source; `--stale` — tasks not updated within duration (e.g., 7d); `--state` — filter by state: open, done, killed; `--unseen-by` — tasks not seen by this agent; `--waiting` — only tasks with waiting_on set |
+| `lists` | `lists` | — |
+| `restore` | `restore` | — |
+| `seen` | `seen <agent> [task_ids...]` | `--list` — mark all open tasks in this list as seen |
+| `stats` | `stats` | — |
+<!-- docgen:end:taskprim:commands -->
+
 
 ### JSON Schemas
 
@@ -99,7 +105,7 @@ Task management with lifecycle tracking. Tasks follow: `open` -> `done` | `kille
 }
 ```
 
-**`list --format json`** returns `[Task, ...]`. **`stats --format json`** returns:
+`**list --format json**` returns `[Task, ...]`. `**stats --format json**` returns:
 
 ```json
 {
@@ -111,14 +117,16 @@ Task management with lifecycle tracking. Tasks follow: `open` -> `done` | `kille
 
 ### Idempotency
 
-| Command | Idempotent | Notes |
-|---------|-----------|-------|
-| `add` | No | Creates a new task every call. Deduplicate by checking `list --format json` first |
-| `list`, `get`, `labels`, `lists`, `stats` | Yes | Read-only |
-| `done`, `kill` | Yes | Calling on already-resolved task is a no-op |
-| `edit` | Yes | Same edit applied twice produces same result |
-| `seen` | Yes | Re-marking as seen updates the timestamp |
-| `export` | Yes | Read-only |
+
+| Command                                   | Idempotent | Notes                                                                             |
+| ----------------------------------------- | ---------- | --------------------------------------------------------------------------------- |
+| `add`                                     | No         | Creates a new task every call. Deduplicate by checking `list --format json` first |
+| `list`, `get`, `labels`, `lists`, `stats` | Yes        | Read-only                                                                         |
+| `done`, `kill`                            | Yes        | Calling on already-resolved task is a no-op                                       |
+| `edit`                                    | Yes        | Same edit applied twice produces same result                                      |
+| `seen`                                    | Yes        | Re-marking as seen updates the timestamp                                          |
+| `export`                                  | Yes        | Read-only                                                                         |
+
 
 ### Decision Tree
 
@@ -136,21 +144,25 @@ Namespaced key-value state with three access patterns: key-value, dedup, and app
 
 ### Commands
 
-| Command | Args | Required Flags | Optional Flags |
-|---------|------|---------------|----------------|
-| `set <ns> <key> <json-value>` | namespace, key, JSON | — | — |
-| `get <ns> <key>` | namespace, key | — | — |
-| `has <ns> <key>` | namespace, key | — | — |
-| `set-if-new <ns> <key> <json-value>` | namespace, key, JSON | — | — |
-| `delete <ns> <key>` | namespace, key | — | — |
-| `append <ns> <json-value>` | namespace, JSON | — | — |
-| `query <ns>` | namespace | — | `--since`, `--prefix`, `--count` |
-| `purge <ns>` | namespace | — | `--before` |
-| `namespaces` | — | — | — |
-| `stats` | — | — | — |
-| `export` | — | — | — |
-| `import` | — | — | — |
-| `restore` | — | — | `--timestamp`, `--source` |
+
+<!-- docgen:start:stateprim:commands -->
+| Command | Synopsis | Flags |
+|---------|----------|-------|
+| `append` | `append <namespace> <json-value>` | — |
+| `delete` | `delete <namespace> <key>` | — |
+| `export` | `export` | `--namespace` — export only this namespace |
+| `get` | `get <namespace> <key>` | — |
+| `has` | `has <namespace> <key>` | — |
+| `import` | `import` | `--file` — path to JSON file (default: stdin) |
+| `namespaces` | `namespaces` | — |
+| `purge` | `purge <namespace> <duration>` | — |
+| `query` | `query <namespace>` | `--count` — return count only; `--prefix` — filter by key prefix; `--since` — only records updated within duration (e.g., 24h, 7d) |
+| `restore` | `restore` | — |
+| `set` | `set <namespace> <key> <json-value>` | `--immutable` — mark the record as immutable |
+| `set-if-new` | `set-if-new <namespace> <key> <json-value>` | — |
+| `stats` | `stats` | — |
+<!-- docgen:end:stateprim:commands -->
+
 
 ### JSON Schemas
 
@@ -167,7 +179,7 @@ Namespaced key-value state with three access patterns: key-value, dedup, and app
 }
 ```
 
-**`has` output (text):** `yes` or `no`. **`has --format json`:**
+`**has` output (text):** `yes` or `no`. `**has --format json`:**
 
 ```json
 {
@@ -175,7 +187,7 @@ Namespaced key-value state with three access patterns: key-value, dedup, and app
 }
 ```
 
-**`stats --format json`:**
+`**stats --format json`:**
 
 ```json
 {
@@ -186,14 +198,16 @@ Namespaced key-value state with three access patterns: key-value, dedup, and app
 
 ### Idempotency
 
-| Command | Idempotent | Notes |
-|---------|-----------|-------|
-| `set` | Yes | Upsert — same key+namespace overwrites |
-| `get`, `has`, `query`, `namespaces`, `stats` | Yes | Read-only |
-| `set-if-new` | Yes | No-op if key exists (returns existing record) |
-| `append` | No | Creates a new immutable record every call. Key is auto-generated |
-| `delete` | Yes | Deleting non-existent key is a no-op |
-| `purge` | No | Permanently removes records |
+
+| Command                                      | Idempotent | Notes                                                            |
+| -------------------------------------------- | ---------- | ---------------------------------------------------------------- |
+| `set`                                        | Yes        | Upsert — same key+namespace overwrites                           |
+| `get`, `has`, `query`, `namespaces`, `stats` | Yes        | Read-only                                                        |
+| `set-if-new`                                 | Yes        | No-op if key exists (returns existing record)                    |
+| `append`                                     | No         | Creates a new immutable record every call. Key is auto-generated |
+| `delete`                                     | Yes        | Deleting non-existent key is a no-op                             |
+| `purge`                                      | No         | Permanently removes records                                      |
+
 
 ### Decision Tree
 
@@ -212,27 +226,31 @@ Knowledge graph with typed entities, weighted edges, and hybrid search.
 
 ### Commands
 
-| Command | Args | Required Flags | Optional Flags |
-|---------|------|---------------|----------------|
-| `capture` | — | `--type`, `--title` | `--body`, `--url`, `--source` (default: hostname), `--properties` (JSON), `--no-auto-connect`, `--threshold` (0.35), `--force` |
-| `search <query>` | search text | — | `--type`, `--limit` (20), `--mode` (hybrid/fts/vector), `--force` |
-| `get <id>` | entity ID | — | — |
-| `edit <id>` | entity ID | — | `--title`, `--body`, `--properties` |
-| `delete <id>` | entity ID | — | — |
-| `connect <src-id> <tgt-id>` | source and target IDs | `--relationship` | `--context`, `--weight` (1.0) |
-| `strengthen <src-id> <tgt-id> <rel>` | source ID, target ID, relationship | — | — |
-| `edge-edit <src-id> <tgt-id> <rel>` | source ID, target ID, relationship | — | `--context`, `--weight` |
-| `disconnect <src-id> <tgt-id> <rel>` | source ID, target ID, relationship | — | — |
-| `related <id>` | entity ID | — | `--depth` (1), `--direction` (both/outgoing/incoming), `--relationship`, `--min-weight` (0) |
-| `discover` | — | — | `--orphans`, `--clusters`, `--bridges`, `--temporal`, `--weak-edges` (no flags = all) |
-| `types` | — | — | — |
-| `relationships` | — | — | — |
-| `stats` | — | — | — |
-| `export` | — | — | `--type` |
-| `import` | — | — | — |
-| `re-embed` | — | — | — |
-| `strip-vectors` | — | — | `--confirm` |
-| `restore` | — | — | `--timestamp`, `--source` |
+
+<!-- docgen:start:knowledgeprim:commands -->
+| Command | Synopsis | Flags |
+|---------|----------|-------|
+| `capture` | `capture` | `--body` — entity body text; `--force` — bypass embedding model mismatch check; `--no-auto-connect` — skip auto-connect; `--properties` — JSON properties; `--source` (default: `cli`) — who captured this; `--threshold` (default: `0.35`) — auto-connect cosine distance threshold; `--title` *(required)* — entity title; `--type` *(required)* — entity type (article, thought, concept, pattern, etc.); `--url` — source URL |
+| `connect` | `connect <source-id> <target-id>` | `--context` — edge context (why this connection exists); `--relationship` *(required)* — relationship type; `--weight` (default: `1`) — edge weight |
+| `delete` | `delete <id>` | — |
+| `disconnect` | `disconnect <source-id> <target-id> <relationship>` | — |
+| `discover` | `discover` | `--bridges` — find cross-cluster connectors; `--clusters` — find densely connected groups; `--orphans` — find entities with no edges; `--temporal` — show type distribution over time; `--weak-edges` — find edges with no context |
+| `edge-edit` | `edge-edit <source-id> <target-id> <relationship>` | `--context` — edge context; `--weight` — edge weight |
+| `edit` | `edit <id>` | `--body` — new body; `--properties` — JSON properties; `--title` — new title |
+| `export` | `export` | `--type` — export only entities of this type |
+| `get` | `get <id>` | — |
+| `import` | `import` | — |
+| `re-embed` | `re-embed` | — |
+| `related` | `related <id>` | `--depth` (default: `1`) — traversal depth (hops); `--direction` (default: `both`) — edge direction: outgoing, incoming, both; `--min-weight` — minimum edge weight; `--relationship` — filter by relationship type |
+| `relationships` | `relationships` | — |
+| `restore` | `restore` | — |
+| `search` | `search <query>` | `--force` — bypass embedding model mismatch check; `--limit` (default: `20`) — max results; `--mode` (default: `hybrid`) — search mode: hybrid, fts, vector; `--type` — filter by entity type |
+| `stats` | `stats` | — |
+| `strengthen` | `strengthen <source-id> <target-id> <relationship>` | — |
+| `strip-vectors` | `strip-vectors` | `--confirm` — confirm destructive operation |
+| `types` | `types` | — |
+<!-- docgen:end:knowledgeprim:commands -->
+
 
 ### JSON Schemas
 
@@ -267,7 +285,7 @@ Knowledge graph with typed entities, weighted edges, and hybrid search.
 }
 ```
 
-**`search --format json`** returns:
+`**search --format json**` returns:
 
 ```json
 [
@@ -278,7 +296,7 @@ Knowledge graph with typed entities, weighted edges, and hybrid search.
 ]
 ```
 
-**`related --format json`** returns:
+`**related --format json**` returns:
 
 ```json
 [
@@ -292,7 +310,7 @@ Knowledge graph with typed entities, weighted edges, and hybrid search.
 ]
 ```
 
-**`discover --format json`** returns:
+`**discover --format json**` returns:
 
 ```json
 {
@@ -304,7 +322,7 @@ Knowledge graph with typed entities, weighted edges, and hybrid search.
 }
 ```
 
-**`stats --format json`:**
+`**stats --format json`:**
 
 ```json
 {
@@ -320,18 +338,20 @@ Knowledge graph with typed entities, weighted edges, and hybrid search.
 
 ### Idempotency
 
-| Command | Idempotent | Notes |
-|---------|-----------|-------|
-| `capture` | No | Creates a new entity every call. Search first to avoid duplicates |
-| `search`, `get`, `related`, `discover`, `types`, `relationships`, `stats` | Yes | Read-only |
-| `connect` | No | Fails if edge already exists (same source, target, relationship) |
-| `strengthen` | No | Additive — increments weight by 1.0 each call |
-| `edge-edit` | Yes | Same edit applied twice produces same result |
-| `disconnect` | Yes | Deleting non-existent edge is a no-op |
-| `edit` | Yes | Same edit applied twice produces same result |
-| `delete` | Yes | Deleting non-existent entity is a no-op |
-| `re-embed` | No | Re-generates all vectors with current provider. Expensive (API calls per entity) |
-| `strip-vectors` | Yes | Deleting already-empty vectors is a no-op |
+
+| Command                                                                   | Idempotent | Notes                                                                            |
+| ------------------------------------------------------------------------- | ---------- | -------------------------------------------------------------------------------- |
+| `capture`                                                                 | No         | Creates a new entity every call. Search first to avoid duplicates                |
+| `search`, `get`, `related`, `discover`, `types`, `relationships`, `stats` | Yes        | Read-only                                                                        |
+| `connect`                                                                 | No         | Fails if edge already exists (same source, target, relationship)                 |
+| `strengthen`                                                              | No         | Additive — increments weight by 1.0 each call                                    |
+| `edge-edit`                                                               | Yes        | Same edit applied twice produces same result                                     |
+| `disconnect`                                                              | Yes        | Deleting non-existent edge is a no-op                                            |
+| `edit`                                                                    | Yes        | Same edit applied twice produces same result                                     |
+| `delete`                                                                  | Yes        | Deleting non-existent entity is a no-op                                          |
+| `re-embed`                                                                | No         | Re-generates all vectors with current provider. Expensive (API calls per entity) |
+| `strip-vectors`                                                           | Yes        | Deleting already-empty vectors is a no-op                                        |
+
 
 ### Search Mode Decision Tree
 
@@ -384,23 +404,27 @@ Persistent work queues with priority, retries, and atomic dequeue. Jobs follow: 
 
 Queue names and payloads are **positional arguments**, not flags. Commands that act on a specific job take the job ID as a positional argument.
 
-| Command | Synopsis | Required | Optional Flags |
-|---------|----------|----------|----------------|
-| `enqueue` | `enqueue <queue> <json_payload>` | `<queue>`, `<json_payload>` positional | `--type`, `--priority` (high/normal/low, default: normal), `--max-retries` (int, default: 0), `--delay` (e.g. `5m`, `1h`) |
-| `dequeue` | `dequeue <queue>` | `<queue>` positional | `--worker` (default: hostname), `--timeout` (claim window, default: `30m`), `--type` (only claim this job type), `--wait` (block until a job appears), `--timeout-wait` (max wait duration e.g. `5m`; omit for wait-forever) |
-| `peek` | `peek <queue>` | `<queue>` positional | — |
-| `complete` | `complete <id>` | `<id>` positional | `--output` (JSON result payload) |
-| `fail` | `fail <id>` | `<id>` positional | `--reason` (string), `--dead` (force dead regardless of remaining retries) |
-| `release` | `release <id>` | `<id>` positional | — |
-| `extend` | `extend <id>` | `<id>` positional | `--by` (duration, default: `30m`) |
-| `get` | `get <id>` | `<id>` positional | — |
-| `list` | `list` | — | `--queue`, `--status` (pending/claimed/done/failed/dead), `--type`, `--older-than` (e.g. `1h`, `7d`) |
-| `queues` | `queues` | — | — |
-| `stats` | `stats` | — | — |
-| `purge` | `purge <queue>` | `<queue>` positional, `--status` (required) | `--older-than` (e.g. `7d`, `24h`) |
-| `export` | `export` | — | `--queue` (default: all queues) |
-| `import` | `import` | — | — |
-| `restore` | `restore` | — | — |
+
+<!-- docgen:start:queueprim:commands -->
+| Command | Synopsis | Flags |
+|---------|----------|-------|
+| `complete` | `complete <id>` | `--output` — JSON output payload from the worker |
+| `dequeue` | `dequeue <queue>` | `--timeout` (default: `30m`) — visibility timeout for claimed job; `--timeout-wait` — max time to wait (e.g. 5m); 0 = wait forever; `--type` — only claim jobs of this type; `--wait` — block until a job appears; `--worker` — worker name for claimed_by tracking (default: hostname) |
+| `enqueue` | `enqueue <queue> <json_payload>` | `--delay` — delay before job is visible, e.g. 5m, 1h; `--max-retries` — max retries before dead-letter (default 0 = one-shot); `--priority` (default: `normal`) — priority: high, normal, or low; `--type` — job type category for workers (e.g. ssh_auth_fail) |
+| `export` | `export` | `--queue` — export only jobs in this queue (default: all) |
+| `extend` | `extend <id>` | `--by` (default: `30m`) — extension duration, e.g. 30m, 1h |
+| `fail` | `fail <id>` | `--dead` — force to dead-letter regardless of retry count; `--reason` — human-readable failure reason |
+| `get` | `get <id>` | — |
+| `import` | `import` | — |
+| `list` | `list` | `--older-than` — only jobs created before now-duration, e.g. 1h; `--queue` — filter to this queue; `--status` — filter by status: pending, claimed, done, failed, dead; `--type` — filter by job type |
+| `peek` | `peek <queue>` | — |
+| `purge` | `purge <queue>` | `--older-than` — only purge jobs older than this duration, e.g. 7d, 24h; `--status` *(required)* — status to purge: done, dead, failed (required) |
+| `queues` | `queues` | — |
+| `release` | `release <id>` | — |
+| `restore` | `restore` | — |
+| `stats` | `stats` | — |
+<!-- docgen:end:queueprim:commands -->
+
 
 ### JSON Schemas
 
@@ -427,7 +451,7 @@ Queue names and payloads are **positional arguments**, not flags. Commands that 
 }
 ```
 
-**`queues` output:**
+`**queues` output:**
 
 ```json
 [
@@ -435,7 +459,7 @@ Queue names and payloads are **positional arguments**, not flags. Commands that 
 ]
 ```
 
-**`stats` output:**
+`**stats` output:**
 
 ```json
 {
@@ -447,20 +471,22 @@ Queue names and payloads are **positional arguments**, not flags. Commands that 
 }
 ```
 
-**`dequeue` exits 1 with `"queue is empty"` on stderr when the queue is empty (without `--wait`). Use `--wait` to block and poll every 2s until a job appears; combine with `--timeout-wait` to cap the wait duration.**
+`**dequeue` exits 1 with `"queue is empty"` on stderr when the queue is empty (without `--wait`). Use `--wait` to block and poll every 2s until a job appears; combine with `--timeout-wait` to cap the wait duration.**
 
 ### Idempotency
 
-| Command | Idempotent | Notes |
-|---------|-----------|-------|
-| `enqueue` | No | Creates a new job every call |
-| `dequeue` | No | Atomically claims and removes from pending pool |
-| `peek`, `get`, `list`, `queues`, `stats` | Yes | Read-only |
-| `complete` | No | Terminal — cannot re-complete |
-| `fail` | No | Transitions status; retries decrement |
-| `release` | Yes | Releasing an already-pending job is a no-op |
-| `extend` | No | Additive — each call pushes the timeout further |
-| `purge` | No | Permanently deletes matching jobs |
+
+| Command                                  | Idempotent | Notes                                           |
+| ---------------------------------------- | ---------- | ----------------------------------------------- |
+| `enqueue`                                | No         | Creates a new job every call                    |
+| `dequeue`                                | No         | Atomically claims and removes from pending pool |
+| `peek`, `get`, `list`, `queues`, `stats` | Yes        | Read-only                                       |
+| `complete`                               | No         | Terminal — cannot re-complete                   |
+| `fail`                                   | No         | Transitions status; retries decrement           |
+| `release`                                | Yes        | Releasing an already-pending job is a no-op     |
+| `extend`                                 | No         | Additive — each call pushes the timeout further |
+| `purge`                                  | No         | Permanently deletes matching jobs               |
+
 
 ### Decision Tree
 
@@ -479,41 +505,47 @@ Queue names and payloads are **positional arguments**, not flags. Commands that 
 
 All primitives return non-zero exit codes on error. Error messages go to stderr.
 
-| Error | Cause | Recovery |
-|-------|-------|----------|
-| `"type is required"` | Missing `--type` flag on capture | Add `--type <type>` |
-| `"title is required"` | Missing `--title` flag on capture | Add `--title "<title>"` |
-| `"relationship is required"` | Missing `--relationship` on connect | Add `--relationship <rel>` |
-| `"self-edges are not allowed"` | Source and target are the same entity | Use different entity IDs |
-| `"vector search requires an embedding provider"` | Used `--mode vector` without embedding config | Configure embedding in config.yaml or use `--mode fts` |
-| `"embedding model mismatch"` | Configured embedding provider differs from what's in the db | Use `--mode fts`, run `re-embed`, match config to db, or pass `--force` |
-| `"entity not found"` | Entity ID doesn't exist | Verify ID with `search` or `types` |
-| `"database is locked"` | Another process holds the SQLite lock | Retry after a short delay (SQLite busy timeout handles most cases) |
-| `"list is required"` | taskprim `add` without `--list` | Add `--list <list>` |
-| `"namespace is required"` | stateprim command without namespace arg | Provide namespace as first positional arg |
-| `"queue is required"` | queueprim command without `--queue` | Add `--queue <name>` |
-| `"payload is required"` | queueprim `enqueue` without `--payload` | Add `--payload '<json>'` |
-| `"payload must be valid JSON"` | queueprim payload is not valid JSON | Wrap in single quotes; ensure valid JSON |
-| `"job not found"` | Job ID doesn't exist | Verify ID with `list --format json` |
-| `"invalid status transition"` | Operation not valid for current job status (e.g., completing a done job) | Check job status with `get <id>` first |
-| `"queue is empty"` (CLI exit 0) | `dequeue` or `peek` on an empty queue | Normal — poll again or exit worker loop |
+
+| Error                                            | Cause                                                                    | Recovery                                                                |
+| ------------------------------------------------ | ------------------------------------------------------------------------ | ----------------------------------------------------------------------- |
+| `"type is required"`                             | Missing `--type` flag on capture                                         | Add `--type <type>`                                                     |
+| `"title is required"`                            | Missing `--title` flag on capture                                        | Add `--title "<title>"`                                                 |
+| `"relationship is required"`                     | Missing `--relationship` on connect                                      | Add `--relationship <rel>`                                              |
+| `"self-edges are not allowed"`                   | Source and target are the same entity                                    | Use different entity IDs                                                |
+| `"vector search requires an embedding provider"` | Used `--mode vector` without embedding config                            | Configure embedding in config.yaml or use `--mode fts`                  |
+| `"embedding model mismatch"`                     | Configured embedding provider differs from what's in the db              | Use `--mode fts`, run `re-embed`, match config to db, or pass `--force` |
+| `"entity not found"`                             | Entity ID doesn't exist                                                  | Verify ID with `search` or `types`                                      |
+| `"database is locked"`                           | Another process holds the SQLite lock                                    | Retry after a short delay (SQLite busy timeout handles most cases)      |
+| `"list is required"`                             | taskprim `add` without `--list`                                          | Add `--list <list>`                                                     |
+| `"namespace is required"`                        | stateprim command without namespace arg                                  | Provide namespace as first positional arg                               |
+| `"queue is required"`                            | queueprim command without `--queue`                                      | Add `--queue <name>`                                                    |
+| `"payload is required"`                          | queueprim `enqueue` without `--payload`                                  | Add `--payload '<json>'`                                                |
+| `"payload must be valid JSON"`                   | queueprim payload is not valid JSON                                      | Wrap in single quotes; ensure valid JSON                                |
+| `"job not found"`                                | Job ID doesn't exist                                                     | Verify ID with `list --format json`                                     |
+| `"invalid status transition"`                    | Operation not valid for current job status (e.g., completing a done job) | Check job status with `get <id>` first                                  |
+| `"queue is empty"` (CLI exit 0)                  | `dequeue` or `peek` on an empty queue                                    | Normal — poll again or exit worker loop                                 |
+
 
 ## Environment Variables
 
-| Variable | Primitive | Overrides |
-|----------|-----------|-----------|
-| `TASKPRIM_DB` | taskprim | `storage.db` path |
-| `STATEPRIM_DB` | stateprim | `storage.db` path |
-| `KNOWLEDGEPRIM_DB` | knowledgeprim | `storage.db` path |
-| `QUEUEPRIM_DB` | queueprim | `storage.db` path |
-| `TASKPRIM_LIST` | taskprim | Default list name for new tasks |
+
+| Variable           | Primitive     | Overrides                       |
+| ------------------ | ------------- | ------------------------------- |
+| `TASKPRIM_DB`      | taskprim      | `storage.db` path               |
+| `STATEPRIM_DB`     | stateprim     | `storage.db` path               |
+| `KNOWLEDGEPRIM_DB` | knowledgeprim | `storage.db` path               |
+| `QUEUEPRIM_DB`     | queueprim     | `storage.db` path               |
+| `TASKPRIM_LIST`    | taskprim      | Default list name for new tasks |
+
 
 ## ID Formats
 
-| Primitive | Prefix | Example | Generated by |
-|-----------|--------|---------|-------------|
-| taskprim | `t_` | `t_x7k2m9p4n1` | Store on `add` |
-| knowledgeprim (entity) | `e_` | `e_a3b4c5d6e7` | Store on `capture` |
-| queueprim | `q_` | `q_x7k2m9p4n1` | Store on `enqueue` |
+
+| Primitive              | Prefix | Example        | Generated by       |
+| ---------------------- | ------ | -------------- | ------------------ |
+| taskprim               | `t_`   | `t_x7k2m9p4n1` | Store on `add`     |
+| knowledgeprim (entity) | `e_`   | `e_a3b4c5d6e7` | Store on `capture` |
+| queueprim              | `q_`   | `q_x7k2m9p4n1` | Store on `enqueue` |
+
 
 stateprim uses user-provided namespace + key pairs, not generated IDs.
