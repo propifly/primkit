@@ -17,6 +17,7 @@ Each primitive is a single binary that auto-creates its SQLite database on first
 - [Agent Reference](https://github.com/propifly/primkit/blob/main/docs/agent-reference.md): Structured command tables, JSON schemas, decision trees, error patterns for all four primitives
 - [AGENTS.md](https://github.com/propifly/primkit/blob/main/AGENTS.md): Instructions for AI agents developing or using primkit
 - [knowledgeprim Guide](https://github.com/propifly/primkit/blob/main/docs/knowledgeprim.md): Entity types, relationships, edge context, search strategy, discovery workflows
+- [queueprim Guide](https://github.com/propifly/primkit/blob/main/docs/queueprim.md): Visibility timeout, worker loop, priority and queue design, retry and dead-letter strategy
 - [Configuration](https://github.com/propifly/primkit/blob/main/docs/configuration.md): Full YAML spec, environment variable overrides, embedding provider setup
 - [Architecture](https://github.com/propifly/primkit/blob/main/docs/architecture.md): Layered design, store interfaces, data model, replication
 

@@ -130,6 +130,8 @@ queueprim queues
 
 Job lifecycle: `pending` → `claimed` → `done` / `failed` / `dead`
 
+**[queueprim Guide](docs/queueprim.md)** — visibility timeout, the worker loop, priority and queue design, retry and dead-letter strategy, monitoring.
+
 ## Architecture
 
 ```
@@ -669,6 +671,7 @@ Tests use **in-memory SQLite** — no disk I/O, no cleanup, fast and isolated.
 
 - [Agent Reference](docs/agent-reference.md) — structured command tables, JSON schemas, decision trees, error patterns (for agents)
 - [knowledgeprim Guide](docs/knowledgeprim.md) — entity types, relationships, edge context, search strategy, discovery, agent workflows
+- [queueprim Guide](docs/queueprim.md) — visibility timeout, worker loop, priority and queue design, retry and dead-letter strategy
 - [Configuration Reference](docs/configuration.md) — full YAML spec, env var overrides, examples
 - [Architecture](docs/architecture.md) — layered design, store interfaces, data flow, replication
 - [Setup Guide](SETUP.md) — R2/S3 setup, replication testing, MCP configuration
