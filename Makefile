@@ -1,4 +1,4 @@
-.PHONY: all build build-pi test lint fmt tidy clean docs docs-check check-registration install-hooks
+.PHONY: all build build-pi test lint fmt tidy clean docs docs-check check-registration install-hooks sync-agent-docs
 
 # Build both binaries for the current platform.
 all: tidy fmt lint test build docs-check check-registration
@@ -62,3 +62,7 @@ check-registration:
 # Install git hooks (run once after cloning)
 install-hooks:
 	bash scripts/install-hooks.sh
+
+# Copy agent-facing docs to clawson-config (run after 'make docs' when docs change)
+sync-agent-docs:
+	bash scripts/sync-agent-docs.sh
