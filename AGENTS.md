@@ -2,6 +2,18 @@
 
 Instructions for AI coding agents working on the primkit codebase, and pointers for agents using primkit as a tool.
 
+
+## Setup
+
+One-time setup after cloning:
+
+```bash
+bash scripts/install-hooks.sh
+```
+
+This installs a pre-commit hook that runs `make docs-check` before each commit,
+preventing you from committing stale documentation.
+
 ## If you are using primkit (not developing it)
 
 See the [Agent Reference](docs/agent-reference.md) for structured command tables, JSON output schemas, decision trees, and error handling patterns for all four primitives (taskprim, stateprim, knowledgeprim, queueprim).
@@ -74,6 +86,20 @@ knowledgeprim additionally has `internal/embed/` for the embedding provider abst
 - Tests use `testify/assert` and `testify/require`
 - All tests use in-memory SQLite (`db.OpenInMemory()`) — no disk I/O, no cleanup
 - No global state — store is injected via `cobra.Command` context
+
+
+## When adding a new prim
+
+```bash
+1. bash scripts/new-prim.sh <name>
+2. Implement commands in <name>/internal/cli/
+3. make all   # fails until everything is wired correctly
+4. Update README.md, llms.txt, REPOS.md manually
+```
+
+The scaffold script registers the new prim in go.work, Makefile, scripts/docgen.sh,
+and docs/agent-reference.md. `make check-registration` validates all registrations
+are in place.
 
 ## Git workflow
 

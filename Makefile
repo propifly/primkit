@@ -1,7 +1,7 @@
-.PHONY: all build build-pi test lint fmt tidy clean docs docs-check
+.PHONY: all build build-pi test lint fmt tidy clean docs docs-check check-registration install-hooks
 
 # Build both binaries for the current platform.
-all: tidy fmt lint test build docs-check
+all: tidy fmt lint test build docs-check check-registration
 
 build:
 	cd taskprim && go build -o ../bin/taskprim ./cmd/taskprim
@@ -55,3 +55,11 @@ docs:
 
 docs-check:
 	bash scripts/docgen.sh --check
+
+# Registration validation
+check-registration:
+	bash scripts/check-registration.sh
+
+# Install git hooks (run once after cloning)
+install-hooks:
+	bash scripts/install-hooks.sh
