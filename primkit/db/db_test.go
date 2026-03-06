@@ -67,3 +67,58 @@ func TestOpenInMemory(t *testing.T) {
 	_, err = db.Exec("CREATE TABLE test (id INTEGER PRIMARY KEY)")
 	assert.NoError(t, err, "should be able to create tables in in-memory database")
 }
+
+// TestValidateDBPath covers the env-var-leakage guard added to Open().
+func TestValidateDBPath(t *testing.T) {
+	t.Run("valid paths pass", func(t *testing.T) {
+		valid := []string{
+			"/tmp/test.db",
+			"/home/user/.taskprim/default.db",
+			"/data/workspace-johanna/.knowledge.db",
+			"relative/path.db",
+			"db.db",
+		}
+		for _, p := range valid {
+			assert.NoError(t, validateDBPath(p), "valid path %q should pass", p)
+		}
+	})
+
+	t.Run("null byte rejected", func(t *testing.T) {
+		err := validateDBPath("/tmp/test\x00.db")
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "null byte")
+	})
+
+	t.Run("equals in filename rejected — env var leakage pattern", func(t *testing.T) {
+		// Reproduces: .openclaw/workspace-johanna/.knowledge.dbX_ACCESS_TOKEN=abc
+		// caused by an env parser concatenating two .env lines without a separator.
+		err := validateDBPath("/data/workspace-johanna/.knowledge.dbX_ACCESS_TOKEN=abc123")
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "'='")
+	})
+
+	t.Run("equals in filename rejected — simple case", func(t *testing.T) {
+		err := validateDBPath("/tmp/db=leaked.db")
+		require.Error(t, err)
+	})
+
+	t.Run("equals in directory component allowed", func(t *testing.T) {
+		// Nix store paths and some CI systems use = in directory names.
+		// Only the base filename is checked, not parent directories.
+		err := validateDBPath("/nix/store/abc=def/bin/test.db")
+		assert.NoError(t, err)
+	})
+
+	t.Run("error message includes actionable hint", func(t *testing.T) {
+		err := validateDBPath("/tmp/.knowledge.dbSECRET_TOKEN=hunter2")
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "hint:")
+		assert.Contains(t, err.Error(), "KNOWLEDGEPRIM_DB")
+	})
+
+	t.Run("Open rejects path with equals in filename", func(t *testing.T) {
+		_, err := Open("/tmp/.knowledge.dbTOKEN=leaked")
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "'='")
+	})
+}
