@@ -17,6 +17,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   - MCP tools: `enqueue_job`, `dequeue_job`, `complete_job`, `fail_job`, `release_job`,
     `extend_job`, `list_jobs`, `get_job`, `list_queues`, `get_stats`, `purge_queue`
   - CLI commands mirroring all API/MCP operations
+- **queueprim**: `docs/queueprim.md` usage guide covering visibility timeout mechanics,
+  the worker loop pattern, priority vs. multiple queues, retry and dead-letter strategy,
+  delayed jobs, and monitoring signals.
 
 ### Fixed
 
@@ -41,6 +44,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   With --config:    --db flag → storage.db from config file → default
   Without --config: --db flag → *PRIM_DB env var → default
   ```
+- **queueprim**: `docs/agent-reference.md` commands table corrected — `enqueue`, `dequeue`,
+  `peek`, and `purge` take queue names as positional arguments, not `--queue` flags;
+  `dequeue` was missing `--wait` and `--timeout-wait` flags; `restore` had fabricated
+  `--timestamp` and `--source` flags that do not exist; empty-queue behavior was
+  documented as exit 0 when it is actually exit 1.
+- **queueprim**: `purge --status` is now enforced at parse time via `MarkFlagRequired`,
+  producing a clear error instead of silently failing inside `RunE`.
+
+### Changed
+
+- **knowledgeprim**: Default Gemini embedding model updated from `text-embedding-004`
+  to `gemini-embedding-001`. Update `embedding.model` in any config files using the
+  old model name.
+- **contributor tooling**: `docs/agent-reference.md` command tables are now generated
+  from the Cobra source (`make docs`) and verified in CI (`make docs-check`), eliminating
+  flag drift between code and docs. `make check-registration` validates that every prim
+  in `go.work` is wired into all required registration points. `scripts/new-prim.sh`
+  scaffolds a new prim and auto-registers it everywhere.
 
 ## [v0.3.0] - 2026-03-05
 
