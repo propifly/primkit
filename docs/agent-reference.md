@@ -382,23 +382,25 @@ Persistent work queues with priority, retries, and atomic dequeue. Jobs follow: 
 
 ### Commands
 
-| Command | Args | Required Flags | Optional Flags |
-|---------|------|---------------|----------------|
-| `enqueue` | — | `--queue`, `--payload` (JSON) | `--type`, `--priority` (high/normal/low), `--max-retries`, `--delay` (e.g. `5m`) |
-| `dequeue` | — | `--queue` | `--worker`, `--timeout` (default 30m), `--type` |
-| `peek` | — | `--queue` | — |
-| `complete <id>` | job ID | — | `--output` (JSON) |
-| `fail <id>` | job ID | — | `--reason`, `--dead` (force dead-letter) |
-| `release <id>` | job ID | — | — |
-| `extend <id>` | job ID | — | `--by` (duration, default 30m) |
-| `get <id>` | job ID | — | — |
-| `list` | — | — | `--queue`, `--status`, `--type`, `--older-than` |
-| `queues` | — | — | — |
-| `stats` | — | — | — |
-| `purge` | — | `--queue`, `--status` | `--older-than` |
-| `export` | — | — | `--queue` |
-| `import` | — | — | — |
-| `restore` | — | — | `--timestamp`, `--source` |
+Queue names and payloads are **positional arguments**, not flags. Commands that act on a specific job take the job ID as a positional argument.
+
+| Command | Synopsis | Required | Optional Flags |
+|---------|----------|----------|----------------|
+| `enqueue` | `enqueue <queue> <json_payload>` | `<queue>`, `<json_payload>` positional | `--type`, `--priority` (high/normal/low, default: normal), `--max-retries` (int, default: 0), `--delay` (e.g. `5m`, `1h`) |
+| `dequeue` | `dequeue <queue>` | `<queue>` positional | `--worker` (default: hostname), `--timeout` (claim window, default: `30m`), `--type` (only claim this job type), `--wait` (block until a job appears), `--timeout-wait` (max wait duration e.g. `5m`; omit for wait-forever) |
+| `peek` | `peek <queue>` | `<queue>` positional | — |
+| `complete` | `complete <id>` | `<id>` positional | `--output` (JSON result payload) |
+| `fail` | `fail <id>` | `<id>` positional | `--reason` (string), `--dead` (force dead regardless of remaining retries) |
+| `release` | `release <id>` | `<id>` positional | — |
+| `extend` | `extend <id>` | `<id>` positional | `--by` (duration, default: `30m`) |
+| `get` | `get <id>` | `<id>` positional | — |
+| `list` | `list` | — | `--queue`, `--status` (pending/claimed/done/failed/dead), `--type`, `--older-than` (e.g. `1h`, `7d`) |
+| `queues` | `queues` | — | — |
+| `stats` | `stats` | — | — |
+| `purge` | `purge <queue>` | `<queue>` positional, `--status` (required) | `--older-than` (e.g. `7d`, `24h`) |
+| `export` | `export` | — | `--queue` (default: all queues) |
+| `import` | `import` | — | — |
+| `restore` | `restore` | — | — |
 
 ### JSON Schemas
 
@@ -445,7 +447,7 @@ Persistent work queues with priority, retries, and atomic dequeue. Jobs follow: 
 }
 ```
 
-**`dequeue` returns `204 No Content` (CLI: exit 0 with no output) when the queue is empty.**
+**`dequeue` exits 1 with `"queue is empty"` on stderr when the queue is empty (without `--wait`). Use `--wait` to block and poll every 2s until a job appears; combine with `--timeout-wait` to cap the wait duration.**
 
 ### Idempotency
 

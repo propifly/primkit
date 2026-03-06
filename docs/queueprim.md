@@ -43,10 +43,10 @@ QUEUE="builds/ci"
 WORKER="builder-01"
 
 while true; do
-  # Claim the next job. Exit 0 with no output if queue is empty.
-  JOB=$(queueprim dequeue --queue "$QUEUE" --worker "$WORKER" --format json)
+  # Claim the next job. Exits 1 on empty queue; use --wait to block instead.
+  JOB=$(queueprim dequeue "$QUEUE" --worker "$WORKER" --format json 2>/dev/null)
 
-  if [ -z "$JOB" ]; then
+  if [ $? -ne 0 ]; then
     sleep 5
     continue
   fi
