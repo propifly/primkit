@@ -5,7 +5,6 @@ go 1.26
 require (
 	github.com/mark3labs/mcp-go v0.44.1
 	github.com/matoous/go-nanoid/v2 v2.1.0
-	github.com/propifly/primkit/primkit v0.0.0-20260306143302-a3240abd6e37
 	github.com/spf13/cobra v1.10.2
 	github.com/spf13/pflag v1.0.9
 	github.com/stretchr/testify v1.11.1
