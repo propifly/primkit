@@ -87,10 +87,12 @@ for PRIM in "${PRIMS[@]}"; do
   fi
 
   # 5. Makefile: tidy target
-  if file_contains "$ROOT/Makefile" "cd ${PRIM} && go mod tidy"; then
+  # The tidy target uses a for-loop: "for prim in taskprim stateprim ..."
+  # Check that the prim appears on the for-loop line inside the tidy target.
+  if grep -q "^	for prim in.*\b${PRIM}\b" "$ROOT/Makefile"; then
     pass "Makefile tidy target"
   else
-    fail "Makefile tidy target — missing: cd ${PRIM} && go mod tidy"
+    fail "Makefile tidy target — ${PRIM} missing from tidy for-loop in Makefile"
   fi
 
   # 6. scripts/docgen.sh: prim in for loop

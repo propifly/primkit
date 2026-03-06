@@ -51,6 +51,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   documented as exit 0 when it is actually exit 1.
 - **queueprim**: `purge --status` is now enforced at parse time via `MarkFlagRequired`,
   producing a clear error instead of silently failing inside `RunE`.
+- **all prims**: `db.Open()` now validates the database path before touching the
+  filesystem. A mis-parsed `.env` file or unquoted shell variable can concatenate a
+  `KEY=VALUE` assignment onto the DB path, silently writing a secret token into the
+  filename on disk (e.g. `.knowledge.dbX_ACCESS_TOKEN=abc`). Two checks are enforced:
+  null bytes (always corrupt) and `=` in the filename component (reliable signal of
+  env-var leakage). The error message includes an explicit hint pointing at the relevant
+  `*PRIM_DB` env var or `storage.db` config key.
 
 ### Changed
 
