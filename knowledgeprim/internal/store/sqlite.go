@@ -352,6 +352,11 @@ func (s *SQLiteStore) DeleteEdge(ctx context.Context, source, target, relationsh
 // ---------------------------------------------------------------------------
 
 func (s *SQLiteStore) SearchFTS(ctx context.Context, query string, filter *model.SearchFilter) ([]*model.SearchResult, error) {
+	query = sanitizeFTS5Query(query)
+	if query == "" {
+		return nil, nil
+	}
+
 	limit := resolveLimit(filter)
 
 	var whereClause string
