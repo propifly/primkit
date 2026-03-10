@@ -66,6 +66,7 @@ combines FTS5 keyword matching with vector similarity via Reciprocal Rank Fusion
 Three interfaces: CLI (default), HTTP server (serve), MCP server (mcp).`,
 		SilenceUsage:  true,
 		SilenceErrors: true,
+		Version:       resolveVersion(),
 	}
 
 	root.PersistentFlags().StringVar(&dbPath, "db", "", "path to SQLite database")
