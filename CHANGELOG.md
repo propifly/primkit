@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+
+- **all prims**: `version` subcommand prints the binary version (e.g.
+  `taskprim v0.4.2`). Version is injected at build time via ldflags; falls back
+  to the git commit hash from `runtime/debug.ReadBuildInfo` for development
+  builds. The command bypasses database initialization so it works without a
+  configured DB. Makefile `build` and `build-pi` targets, and `.goreleaser.yml`,
+  now inject `-X …/cli.Version` automatically.
+
 ## [v0.4.1] - 2026-03-09
 
 ### Fixed
