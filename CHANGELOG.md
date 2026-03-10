@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Fixed
+
+- **knowledgeprim**: FTS5 search no longer crashes on hyphenated terms (e.g.
+  `agent-first`), colons, wildcards, or FTS5 keywords (`AND`, `OR`, `NOT`,
+  `NEAR`). A new `sanitizeFTS5Query` function quotes tokens that contain
+  special characters before they reach the `MATCH` clause. This fixes all
+  entry points (CLI, HTTP API, MCP server) without requiring an external
+  wrapper script.
+
 ## [v0.4.0] - 2026-03-06
 
 ### Added
