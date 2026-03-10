@@ -131,6 +131,7 @@ All share the same SQLite database.`,
 	}
 
 	root.AddCommand(
+		newVersionCmd(),
 		newEnqueueCmd(),
 		newDequeueCmd(),
 		newCompleteCmd(),
