@@ -64,6 +64,7 @@ Three interfaces: CLI (default), HTTP server (serve), MCP server (mcp).
 All share the same SQLite database.`,
 		SilenceUsage:  true,
 		SilenceErrors: true,
+		Version:       resolveVersion(),
 	}
 
 	root.PersistentFlags().StringVar(&dbPath, "db", "", "path to SQLite database")

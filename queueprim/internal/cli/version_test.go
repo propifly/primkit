@@ -32,6 +32,34 @@ func TestVersionCmdOutput(t *testing.T) {
 	assert.Contains(t, buf.String(), "queueprim v1.2.3")
 }
 
+func TestVersionFlag(t *testing.T) {
+	old := Version
+	Version = "v1.2.3"
+	defer func() { Version = old }()
+
+	root := NewRootCmd()
+	buf := new(bytes.Buffer)
+	root.SetOut(buf)
+	root.SetArgs([]string{"--version"})
+
+	require.NoError(t, root.Execute())
+	assert.Contains(t, buf.String(), "v1.2.3")
+}
+
+func TestVersionFlagShort(t *testing.T) {
+	old := Version
+	Version = "v1.2.3"
+	defer func() { Version = old }()
+
+	root := NewRootCmd()
+	buf := new(bytes.Buffer)
+	root.SetOut(buf)
+	root.SetArgs([]string{"-v"})
+
+	require.NoError(t, root.Execute())
+	assert.Contains(t, buf.String(), "v1.2.3")
+}
+
 func TestResolveVersion(t *testing.T) {
 	old := Version
 	defer func() { Version = old }()
