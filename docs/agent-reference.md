@@ -80,6 +80,7 @@ Task management with lifecycle tracking. Tasks follow: `open` -> `done` | `kille
 | `restore` | `restore` | — |
 | `seen` | `seen <agent> [task_ids...]` | `--list` — mark all open tasks in this list as seen |
 | `stats` | `stats` | — |
+| `version` | `version` | — |
 <!-- docgen:end:taskprim:commands -->
 
 
@@ -161,6 +162,7 @@ Namespaced key-value state with three access patterns: key-value, dedup, and app
 | `set` | `set <namespace> <key> <json-value>` | `--immutable` — mark the record as immutable |
 | `set-if-new` | `set-if-new <namespace> <key> <json-value>` | — |
 | `stats` | `stats` | — |
+| `version` | `version` | — |
 <!-- docgen:end:stateprim:commands -->
 
 
@@ -249,6 +251,7 @@ Knowledge graph with typed entities, weighted edges, and hybrid search.
 | `strengthen` | `strengthen <source-id> <target-id> <relationship>` | — |
 | `strip-vectors` | `strip-vectors` | `--confirm` — confirm destructive operation |
 | `types` | `types` | — |
+| `version` | `version` | — |
 <!-- docgen:end:knowledgeprim:commands -->
 
 
@@ -423,6 +426,7 @@ Queue names and payloads are **positional arguments**, not flags. Commands that 
 | `release` | `release <id>` | — |
 | `restore` | `restore` | — |
 | `stats` | `stats` | — |
+| `version` | `version` | — |
 <!-- docgen:end:queueprim:commands -->
 
 

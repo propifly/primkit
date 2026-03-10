@@ -156,6 +156,7 @@ Three interfaces: CLI (default), HTTP server (serve), MCP server (mcp).`,
 
 	// Register all subcommands.
 	root.AddCommand(
+		newVersionCmd(),
 		newCaptureCmd(),
 		newSearchCmd(),
 		newRelatedCmd(),

@@ -3,18 +3,24 @@
 # Build both binaries for the current platform.
 all: tidy fmt lint test build docs-check check-registration
 
+VERSION ?= $(shell git describe --tags --always --dirty)
+LDFLAGS_TASK   := -ldflags "-X github.com/propifly/primkit/taskprim/internal/cli.Version=$(VERSION)"
+LDFLAGS_STATE  := -ldflags "-X github.com/propifly/primkit/stateprim/internal/cli.Version=$(VERSION)"
+LDFLAGS_KNOW   := -ldflags "-X github.com/propifly/primkit/knowledgeprim/internal/cli.Version=$(VERSION)"
+LDFLAGS_QUEUE  := -ldflags "-X github.com/propifly/primkit/queueprim/internal/cli.Version=$(VERSION)"
+
 build:
-	cd taskprim && go build -o ../bin/taskprim ./cmd/taskprim
-	cd stateprim && go build -o ../bin/stateprim ./cmd/stateprim
-	cd knowledgeprim && go build -o ../bin/knowledgeprim ./cmd/knowledgeprim
-	cd queueprim && go build -o ../bin/queueprim ./cmd/queueprim
+	cd taskprim && go build $(LDFLAGS_TASK) -o ../bin/taskprim ./cmd/taskprim
+	cd stateprim && go build $(LDFLAGS_STATE) -o ../bin/stateprim ./cmd/stateprim
+	cd knowledgeprim && go build $(LDFLAGS_KNOW) -o ../bin/knowledgeprim ./cmd/knowledgeprim
+	cd queueprim && go build $(LDFLAGS_QUEUE) -o ../bin/queueprim ./cmd/queueprim
 
 # Cross-compile for Raspberry Pi (ARM64 Linux).
 build-pi:
-	cd taskprim && GOOS=linux GOARCH=arm64 go build -o ../bin/taskprim-linux-arm64 ./cmd/taskprim
-	cd stateprim && GOOS=linux GOARCH=arm64 go build -o ../bin/stateprim-linux-arm64 ./cmd/stateprim
-	cd knowledgeprim && GOOS=linux GOARCH=arm64 go build -o ../bin/knowledgeprim-linux-arm64 ./cmd/knowledgeprim
-	cd queueprim && GOOS=linux GOARCH=arm64 go build -o ../bin/queueprim-linux-arm64 ./cmd/queueprim
+	cd taskprim && GOOS=linux GOARCH=arm64 go build $(LDFLAGS_TASK) -o ../bin/taskprim-linux-arm64 ./cmd/taskprim
+	cd stateprim && GOOS=linux GOARCH=arm64 go build $(LDFLAGS_STATE) -o ../bin/stateprim-linux-arm64 ./cmd/stateprim
+	cd knowledgeprim && GOOS=linux GOARCH=arm64 go build $(LDFLAGS_KNOW) -o ../bin/knowledgeprim-linux-arm64 ./cmd/knowledgeprim
+	cd queueprim && GOOS=linux GOARCH=arm64 go build $(LDFLAGS_QUEUE) -o ../bin/queueprim-linux-arm64 ./cmd/queueprim
 
 test:
 	cd primkit && go test -v -race -count=1 ./...

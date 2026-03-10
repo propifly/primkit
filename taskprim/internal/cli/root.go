@@ -149,6 +149,7 @@ MCP server (mcp). All share the same SQLite database.`,
 
 	// Register all subcommands.
 	root.AddCommand(
+		newVersionCmd(),
 		newAddCmd(),
 		newListCmd(),
 		newGetCmd(),

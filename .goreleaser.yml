@@ -7,6 +7,8 @@ builds:
     binary: taskprim
     env:
       - CGO_ENABLED=0
+    ldflags:
+      - -X github.com/propifly/primkit/taskprim/internal/cli.Version={{ .Version }}
     goos:
       - linux
       - darwin
@@ -20,6 +22,8 @@ builds:
     binary: stateprim
     env:
       - CGO_ENABLED=0
+    ldflags:
+      - -X github.com/propifly/primkit/stateprim/internal/cli.Version={{ .Version }}
     goos:
       - linux
       - darwin
@@ -33,6 +37,8 @@ builds:
     binary: knowledgeprim
     env:
       - CGO_ENABLED=0
+    ldflags:
+      - -X github.com/propifly/primkit/knowledgeprim/internal/cli.Version={{ .Version }}
     goos:
       - linux
       - darwin
@@ -46,6 +52,8 @@ builds:
     binary: queueprim
     env:
       - CGO_ENABLED=0
+    ldflags:
+      - -X github.com/propifly/primkit/queueprim/internal/cli.Version={{ .Version }}
     goos:
       - linux
       - darwin
