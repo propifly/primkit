@@ -26,7 +26,7 @@ server:
 # still work. Vector search and auto-connect require an embedding provider.
 embedding:
   provider: ""               # gemini | openai | custom
-  model: ""                  # e.g., gemini-embedding-001 (gemini), text-embedding-3-small (openai)
+  model: ""                  # e.g., text-embedding-004 (gemini), text-embedding-3-small (openai)
   dimensions: 768            # Must match model output
   api_key: "${KNOWLEDGEPRIM_EMBEDDING_API_KEY}"
   endpoint: ""               # Custom endpoint (for local models or proxies)

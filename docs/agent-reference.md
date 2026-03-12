@@ -17,12 +17,13 @@ ARCH=$(uname -m); [[ "$ARCH" == "x86_64" ]] && ARCH="amd64"
 
 # Install all four (or pick the ones you need)
 for bin in taskprim stateprim knowledgeprim queueprim; do
-  curl -sL "https://github.com/propifly/primkit/releases/latest/download/${bin}_0.1.0_${OS}_${ARCH}.tar.gz" | tar xz
+  VERSION="0.4.1"  # check https://github.com/propifly/primkit/releases for latest
+  curl -sL "https://github.com/propifly/primkit/releases/download/v${VERSION}/${bin}_${VERSION}_${OS}_${ARCH}.tar.gz" | tar xz
 done
 sudo mv taskprim stateprim knowledgeprim queueprim /usr/local/bin/
 ```
 
-**From source (requires Go 1.22+):**
+**From source (requires Go 1.26+):**
 
 ```bash
 git clone https://github.com/propifly/primkit.git && cd primkit && make build
@@ -49,7 +50,7 @@ No configuration required. Databases auto-create on first use at `~/<primitive>/
 | ---------- | ------ | -------------------------- | -------------------------------------------------------------- |
 | `--db`     | string | `~/<primitive>/default.db` | Path to SQLite database                                        |
 | `--config` | string | `config.yaml`              | Path to config file                                            |
-| `--format` | string | `text`                     | Output format: `text`, `json` (taskprim also supports `quiet`) |
+| `--format` | string | varies                     | Output format. knowledgeprim: `text` (default), `json`. taskprim, stateprim, queueprim: `table` (default), `json`, `quiet`. |
 
 
 Always use `--format json` for programmatic consumption.
@@ -475,7 +476,7 @@ Queue names and payloads are **positional arguments**, not flags. Commands that 
 }
 ```
 
-`**dequeue` exits 1 with `"queue is empty"` on stderr when the queue is empty (without `--wait`). Use `--wait` to block and poll every 2s until a job appears; combine with `--timeout-wait` to cap the wait duration.**
+**`dequeue` exits 1 with `"queue is empty"` on stderr when the queue is empty (without `--wait`). Use `--wait` to block and poll every 2s until a job appears; combine with `--timeout-wait` to cap the wait duration.**
 
 ### Idempotency
 
@@ -494,14 +495,14 @@ Queue names and payloads are **positional arguments**, not flags. Commands that 
 
 ### Decision Tree
 
-- **Producer enqueues work**: `enqueue --queue <q> --payload '<json>'`
-- **Worker claims next job**: `dequeue --queue <q> --worker <name> --format json` → parse `id`
+- **Producer enqueues work**: `enqueue <queue> '<json_payload>'`
+- **Worker claims next job**: `dequeue <queue> --worker <name> --format json` → parse `id`
 - **Long-running job (heartbeat)**: `extend <id> --by 30m` before timeout expires
 - **Mark success**: `complete <id>` (optionally `--output '<json>'`)
 - **Mark failure (retriable)**: `fail <id> --reason "..."` → retries if `max_retries > attempt_count`
 - **Mark failure (permanent)**: `fail <id> --dead`
-- **Inspect queue without consuming**: `peek --queue <q>`
-- **Clean up old done jobs**: `purge --queue <q> --status done --older-than 7d`
+- **Inspect queue without consuming**: `peek <queue>`
+- **Clean up old done jobs**: `purge <queue> --status done --older-than 7d`
 
 ---
 
@@ -522,12 +523,12 @@ All primitives return non-zero exit codes on error. Error messages go to stderr.
 | `"database is locked"`                           | Another process holds the SQLite lock                                    | Retry after a short delay (SQLite busy timeout handles most cases)      |
 | `"list is required"`                             | taskprim `add` without `--list`                                          | Add `--list <list>`                                                     |
 | `"namespace is required"`                        | stateprim command without namespace arg                                  | Provide namespace as first positional arg                               |
-| `"queue is required"`                            | queueprim command without `--queue`                                      | Add `--queue <name>`                                                    |
-| `"payload is required"`                          | queueprim `enqueue` without `--payload`                                  | Add `--payload '<json>'`                                                |
+| `"queue is required"`                            | queueprim command without queue positional arg                           | Provide queue as first positional arg                                   |
+| `"payload is required"`                          | queueprim `enqueue` without payload positional arg                       | Provide JSON payload as second positional arg                           |
 | `"payload must be valid JSON"`                   | queueprim payload is not valid JSON                                      | Wrap in single quotes; ensure valid JSON                                |
 | `"job not found"`                                | Job ID doesn't exist                                                     | Verify ID with `list --format json`                                     |
 | `"invalid status transition"`                    | Operation not valid for current job status (e.g., completing a done job) | Check job status with `get <id>` first                                  |
-| `"queue is empty"` (CLI exit 0)                  | `dequeue` or `peek` on an empty queue                                    | Normal — poll again or exit worker loop                                 |
+| `"queue is empty"` (CLI: `dequeue` exit 1, `peek` exit 0) | `dequeue` or `peek` on an empty queue                          | Normal — poll again or exit worker loop                                 |
 
 
 ## Environment Variables

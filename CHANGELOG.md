@@ -84,8 +84,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
-- **knowledgeprim**: Default Gemini embedding model updated from `text-embedding-004`
-  to `gemini-embedding-001`. Update `embedding.model` in any config files using the
+- **knowledgeprim**: Default Gemini embedding model updated from `gemini-embedding-001`
+  to `text-embedding-004`. Update `embedding.model` in any config files using the
   old model name.
 - **contributor tooling**: `docs/agent-reference.md` command tables are now generated
   from the Cobra source (`make docs`) and verified in CI (`make docs-check`), eliminating

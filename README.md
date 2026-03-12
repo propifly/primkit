@@ -9,7 +9,7 @@
   <a href="https://github.com/propifly/primkit/releases/latest"><img src="https://img.shields.io/github/v/release/propifly/primkit" alt="Release"></a>
   <a href="https://goreportcard.com/report/github.com/propifly/primkit/primkit"><img src="https://goreportcard.com/badge/github.com/propifly/primkit/primkit" alt="Go Report Card"></a>
   <a href="./LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT"></a>
-  <a href="https://go.dev/dl/"><img src="https://img.shields.io/badge/Go-1.22+-00ADD8?logo=go&logoColor=white" alt="Go Version"></a>
+  <a href="https://go.dev/dl/"><img src="https://img.shields.io/badge/Go-1.26+-00ADD8?logo=go&logoColor=white" alt="Go Version"></a>
 </p>
 
 <p align="center"><strong>Infrastructure primitives for AI agents — tasks, state, knowledge, and work queues.</strong><br>Single Go binaries with embedded SQLite — no dependencies, no Docker, no database server.</p>
@@ -95,7 +95,7 @@ knowledgeprim capture --type article --title "Agents prefer CLI over MCP" \
 knowledgeprim search "agent tool preferences" --mode hybrid
 
 # Connect two entities with context
-knowledgeprim connect --source e_abc --target e_def \
+knowledgeprim connect e_abc e_def \
   --relationship extends --context "Builds on the CLI-first argument with cost data"
 
 # Traverse the graph
@@ -113,16 +113,16 @@ Persistent work queues for multi-agent pipelines. Jobs have priority, retries, a
 
 ```bash
 # Enqueue a job (auto-creates ~/.queueprim/default.db)
-queueprim enqueue --queue infra/fixes --payload '{"host":"web-01","issue":"disk_full"}'
+queueprim enqueue infra/fixes '{"host":"web-01","issue":"disk_full"}'
 
 # Worker atomically claims the next job
-queueprim dequeue --queue infra/fixes --worker johanna
+queueprim dequeue infra/fixes --worker johanna
 
 # Mark it done with output
 queueprim complete q_abc123 --output '{"freed_gb":12}'
 
 # Inspect without claiming
-queueprim peek --queue infra/fixes
+queueprim peek infra/fixes
 
 # List all queues with job counts
 queueprim queues
@@ -164,29 +164,28 @@ Each primitive is a **single Go binary** with three access modes:
 Download the latest release for your platform. Install only the primitives you need:
 
 ```bash
+# Set the version (check https://github.com/propifly/primkit/releases for latest)
+VERSION="0.4.1"
+
 # macOS (Apple Silicon)
-curl -sL https://github.com/propifly/primkit/releases/latest/download/taskprim_0.1.0_darwin_arm64.tar.gz | tar xz
-curl -sL https://github.com/propifly/primkit/releases/latest/download/stateprim_0.1.0_darwin_arm64.tar.gz | tar xz
-curl -sL https://github.com/propifly/primkit/releases/latest/download/knowledgeprim_0.1.0_darwin_arm64.tar.gz | tar xz
-curl -sL https://github.com/propifly/primkit/releases/latest/download/queueprim_0.1.0_darwin_arm64.tar.gz | tar xz
+for bin in taskprim stateprim knowledgeprim queueprim; do
+  curl -sL "https://github.com/propifly/primkit/releases/download/v${VERSION}/${bin}_${VERSION}_darwin_arm64.tar.gz" | tar xz
+done
 
 # macOS (Intel)
-curl -sL https://github.com/propifly/primkit/releases/latest/download/taskprim_0.1.0_darwin_amd64.tar.gz | tar xz
-curl -sL https://github.com/propifly/primkit/releases/latest/download/stateprim_0.1.0_darwin_amd64.tar.gz | tar xz
-curl -sL https://github.com/propifly/primkit/releases/latest/download/knowledgeprim_0.1.0_darwin_amd64.tar.gz | tar xz
-curl -sL https://github.com/propifly/primkit/releases/latest/download/queueprim_0.1.0_darwin_amd64.tar.gz | tar xz
+for bin in taskprim stateprim knowledgeprim queueprim; do
+  curl -sL "https://github.com/propifly/primkit/releases/download/v${VERSION}/${bin}_${VERSION}_darwin_amd64.tar.gz" | tar xz
+done
 
 # Linux (x86_64)
-curl -sL https://github.com/propifly/primkit/releases/latest/download/taskprim_0.1.0_linux_amd64.tar.gz | tar xz
-curl -sL https://github.com/propifly/primkit/releases/latest/download/stateprim_0.1.0_linux_amd64.tar.gz | tar xz
-curl -sL https://github.com/propifly/primkit/releases/latest/download/knowledgeprim_0.1.0_linux_amd64.tar.gz | tar xz
-curl -sL https://github.com/propifly/primkit/releases/latest/download/queueprim_0.1.0_linux_amd64.tar.gz | tar xz
+for bin in taskprim stateprim knowledgeprim queueprim; do
+  curl -sL "https://github.com/propifly/primkit/releases/download/v${VERSION}/${bin}_${VERSION}_linux_amd64.tar.gz" | tar xz
+done
 
 # Linux (ARM64 / Raspberry Pi)
-curl -sL https://github.com/propifly/primkit/releases/latest/download/taskprim_0.1.0_linux_arm64.tar.gz | tar xz
-curl -sL https://github.com/propifly/primkit/releases/latest/download/stateprim_0.1.0_linux_arm64.tar.gz | tar xz
-curl -sL https://github.com/propifly/primkit/releases/latest/download/knowledgeprim_0.1.0_linux_arm64.tar.gz | tar xz
-curl -sL https://github.com/propifly/primkit/releases/latest/download/queueprim_0.1.0_linux_arm64.tar.gz | tar xz
+for bin in taskprim stateprim knowledgeprim queueprim; do
+  curl -sL "https://github.com/propifly/primkit/releases/download/v${VERSION}/${bin}_${VERSION}_linux_arm64.tar.gz" | tar xz
+done
 ```
 
 Move to your PATH:
@@ -198,12 +197,12 @@ sudo mv taskprim stateprim knowledgeprim queueprim /usr/local/bin/
 Or use `gh`:
 
 ```bash
-gh release download v0.1.0 --repo propifly/primkit --pattern '*darwin_arm64*'
+gh release download --latest --repo propifly/primkit --pattern '*darwin_arm64*'
 ```
 
 ### From source
 
-Requires [Go 1.22+](https://go.dev/dl/):
+Requires [Go 1.26+](https://go.dev/dl/):
 
 ```bash
 git clone https://github.com/propifly/primkit.git
@@ -261,7 +260,7 @@ knowledgeprim capture --type concept --title "Eventual consistency" \
 knowledgeprim search "consistency models"
 
 # Connect two entities
-knowledgeprim connect --source e_abc --target e_def --relationship relates_to \
+knowledgeprim connect e_abc e_def --relationship relates_to \
   --context "Both deal with distributed state"
 
 # Traverse from an entity
@@ -272,10 +271,10 @@ knowledgeprim related e_abc --depth 2
 
 ```bash
 # Enqueue a job (auto-creates ~/.queueprim/default.db)
-queueprim enqueue --queue tasks/default --payload '{"action":"reindex"}'
+queueprim enqueue tasks/default '{"action":"reindex"}'
 
 # Worker claims and processes it
-queueprim dequeue --queue tasks/default --worker agent-01
+queueprim dequeue tasks/default --worker agent-01
 
 # Complete or fail it
 queueprim complete q_abc123
@@ -314,8 +313,8 @@ knowledgeprim search "hello"
 For queueprim:
 
 ```bash
-queueprim enqueue --queue test --payload '{"ping":true}'
-queueprim dequeue --queue test --worker agent
+queueprim enqueue test '{"ping":true}'
+queueprim dequeue test --worker agent
 ```
 
 No config file needed. The database is created automatically on first use.
@@ -350,6 +349,7 @@ queueprim serve --port 8093
 | `POST` | `/v1/tasks/{id}/done` | Mark done |
 | `POST` | `/v1/tasks/{id}/kill` | Mark killed |
 | `POST` | `/v1/seen/{agent}` | Mark tasks as seen |
+| `POST` | `/v1/labels/{name}/clear` | Remove label from all tasks |
 | `GET` | `/v1/labels` | List labels |
 | `GET` | `/v1/lists` | List all lists |
 | `GET` | `/v1/stats` | Aggregate stats |
@@ -553,7 +553,7 @@ All binaries accept:
 ```
 --db <path>        Path to SQLite database
 --config <path>    Path to config file
---format <fmt>     Output format: text (default), json
+--format <fmt>     Output format (knowledgeprim: text/json, others: table/json/quiet)
 ```
 
 <details>
@@ -563,8 +563,10 @@ All binaries accept:
 primkit/
 ├── primkit/                  # Shared foundation library
 │   ├── auth/                 #   API key validation (constant-time)
+│   ├── cmd/docupdater/       #   Auto-generated docs updater tool
 │   ├── config/               #   YAML + env var config loader
 │   ├── db/                   #   SQLite (WAL mode) + migration runner
+│   ├── docgen/               #   Documentation generation library
 │   ├── mcp/                  #   MCP server scaffold
 │   ├── replicate/            #   Litestream WAL replication wrapper
 │   └── server/               #   HTTP server, middleware, JSON helpers
@@ -573,7 +575,7 @@ primkit/
 │   └── internal/
 │       ├── model/            #   Task, Filter, state machine
 │       ├── store/            #   Store interface + SQLite impl
-│       ├── cli/              #   Cobra commands (14 commands)
+│       ├── cli/              #   Cobra commands (16 commands)
 │       ├── api/              #   HTTP API handler
 │       └── mcpserver/        #   MCP tool registrations
 ├── stateprim/                # State persistence primitive
@@ -581,7 +583,7 @@ primkit/
 │   └── internal/
 │       ├── model/            #   Record, QueryFilter
 │       ├── store/            #   Store interface + SQLite impl
-│       ├── cli/              #   Cobra commands (14 commands)
+│       ├── cli/              #   Cobra commands (16 commands)
 │       ├── api/              #   HTTP API handler
 │       └── mcpserver/        #   MCP tool registrations
 ├── knowledgeprim/            # Knowledge graph primitive
@@ -590,7 +592,7 @@ primkit/
 │       ├── model/            #   Entity, Edge, SearchFilter, TraversalOpts
 │       ├── store/            #   Store interface + SQLite impl (FTS5, vectors)
 │       ├── embed/            #   Embedding provider (Gemini, OpenAI, custom)
-│       ├── cli/              #   Cobra commands (19 commands)
+│       ├── cli/              #   Cobra commands (22 commands)
 │       ├── api/              #   HTTP API handler
 │       └── mcpserver/        #   MCP tool registrations
 ├── queueprim/                # Work queue primitive
@@ -598,7 +600,7 @@ primkit/
 │   └── internal/
 │       ├── model/            #   Job, Filter, Priority, Status, QueueInfo, Stats
 │       ├── store/            #   Store interface + SQLite impl
-│       ├── cli/              #   Cobra commands (15 commands)
+│       ├── cli/              #   Cobra commands (18 commands)
 │       ├── api/              #   HTTP API handler
 │       └── mcpserver/        #   MCP tool registrations
 ├── go.work                   # Go workspace (5 modules)
@@ -612,7 +614,7 @@ primkit/
 
 ### Prerequisites
 
-- [Go 1.22+](https://go.dev/dl/)
+- [Go 1.26+](https://go.dev/dl/)
 
 ### Build & test
 

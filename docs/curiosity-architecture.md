@@ -32,7 +32,7 @@ Together: knowledgeprim is what the agent knows, stateprim is what the agent is 
 
 A document store (or flat memory files) gives you retrieval: "find things related to X." A graph gives you traversal: "what connects to this observation, and what connects to *those* things?" Traversal is what produces non-obvious connections — the kind where an observation about client revenue leakage links through a pattern about tribal knowledge to a recommendation about discovery phase methodology. The agent didn't search for that chain. It followed edges.
 
-Auto-connect (cosine similarity on capture) seeds the graph with structural connections the agent didn't explicitly create. At threshold 0.72 with max 5 connections, each new entity arrives pre-linked to its most relevant neighbors. The agent's job is to upgrade these mechanical `similar_to` edges into meaningful relationships with context — or to discover that the similarity was superficial and the real connection is elsewhere.
+Auto-connect (cosine distance on capture) seeds the graph with structural connections the agent didn't explicitly create. In the Lukas deployment, we used threshold 0.28 (cosine distance — lower means more similar) with max 5 connections (primkit defaults are 0.35 / 10); each new entity arrives pre-linked to its most relevant neighbors. The agent's job is to upgrade these mechanical `similar_to` edges into meaningful relationships with context — or to discover that the similarity was superficial and the real connection is elsewhere.
 
 ## The Three Layers of Curiosity
 
@@ -147,7 +147,7 @@ Phases 1 and 2 are human-guided: the human knows what matters, what the methodol
 
 **Seeding with caveats:** If the domain is evolving (methodology being built, product in flux), capture that as an explicit instruction entity: "The methodology is evolving — there will be discrepancies between documentation and actual deliverables. This is expected, not a quality problem." Without this, the agent will flag every discrepancy as a finding, drowning signal in noise.
 
-**Our experience:** 50 entities seeded across 4 types (23 instructions, 17 observations, 5 articles, 5 patterns) with auto-connect at threshold 0.72 produced 296 edges automatically. Zero orphans — every entity connected to at least one other. The graph was immediately navigable.
+**Our experience:** 50 entities seeded across 4 types (23 instructions, 17 observations, 5 articles, 5 patterns) with auto-connect at cosine distance threshold 0.28 (tighter than the default 0.35) produced 296 edges automatically. Zero orphans — every entity connected to at least one other. The graph was immediately navigable.
 
 ## When Human Involvement Is Needed
 
@@ -203,7 +203,7 @@ This means the graph's knowledge is in two places: entities (nodes) and edge con
 
 ### Auto-Connect as Serendipity Engine
 
-Auto-connect (cosine similarity on capture) creates connections the agent didn't explicitly plan. At threshold 0.72 (conservative — fewer, tighter connections), new entities arrive pre-linked to their most relevant neighbors. Sometimes these connections are obvious (two observations about the same client). Sometimes they're surprising (a methodology observation linked to a competitive intelligence article because they both discuss governance frameworks).
+Auto-connect (cosine distance on capture) creates connections the agent didn't explicitly plan. In this deployment we used cosine distance threshold 0.28 (tighter than primkit's default 0.35 — lower means more similar, so fewer but higher-confidence connections). New entities arrive pre-linked to their most relevant neighbors. Sometimes these connections are obvious (two observations about the same client). Sometimes they're surprising (a methodology observation linked to a competitive intelligence article because they both discuss governance frameworks).
 
 The agent's exploration job includes reviewing auto-connected edges and asking: "Is this connection meaningful? Should I upgrade it to a specific relationship with context? Or is the similarity superficial?" This review process itself generates insights — the agent discovers connections it wouldn't have searched for.
 

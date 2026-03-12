@@ -69,6 +69,6 @@ check-registration:
 install-hooks:
 	bash scripts/install-hooks.sh
 
-# Copy agent-facing docs to clawson-config (run after 'make docs' when docs change)
+# Package agent-facing docs into a distributable zip (run after 'make docs' when docs change)
 sync-agent-docs:
 	bash scripts/sync-agent-docs.sh
