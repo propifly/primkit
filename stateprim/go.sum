@@ -162,8 +162,6 @@ github.com/prometheus/common v0.45.0 h1:2BGz0eBc2hdMDLnO/8n0jeB3oPrt2D08CekT0lne
 github.com/prometheus/common v0.45.0/go.mod h1:YJmSTw9BoKxJplESWWxlbyttQR4uaEcGyv9MZjVOJsY=
 github.com/prometheus/procfs v0.12.0 h1:jluTpSng7V9hY0O2R9DzzJHYb2xULk9VTR1V1R/k6Bo=
 github.com/prometheus/procfs v0.12.0/go.mod h1:pcuDEFsWDnvcgNzo4EEweacyhjeA9Zk3cnaOZAZEfOo=
-github.com/propifly/primkit/primkit v0.0.0-20260310155544-7daa972ac039 h1:IhXnkRWctizr/r7cRWU+9F0fVGk0c+PPVe8gXMViqVk=
-github.com/propifly/primkit/primkit v0.0.0-20260310155544-7daa972ac039/go.mod h1:PqQ0+05puqbQGHzp9JWfWJHFhkjsqZNxJ/msEOHJyts=
 github.com/psanford/sqlite3vfs v0.0.0-20251127171934-4e34e03a991a h1:r4YWl0uVObCbBFvj1VsIlyHzgZwZOHvY1KdRaQjzzUc=
 github.com/psanford/sqlite3vfs v0.0.0-20251127171934-4e34e03a991a/go.mod h1:iW4cSew5PAb1sMZiTEkVJAIBNrepaB6jTYjeP47WtI0=
 github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec h1:W09IVJc94icq4NjY3clb7Lk8O1qJ8BdBEF8z0ibU0rE=
