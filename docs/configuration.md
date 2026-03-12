@@ -50,7 +50,7 @@ server:
   port: 8090
 
 taskprim:
-  default_list: ""
+  default_list: ""              # reserved — use TASKPRIM_LIST env var instead
 
 # knowledgeprim-only settings (ignored by taskprim and stateprim)
 embedding:
@@ -111,11 +111,11 @@ Each key entry:
 
 ### `taskprim`
 
-taskprim-specific settings (ignored by stateprim).
+taskprim-specific settings (ignored by stateprim). Note: the `default_list` field shown in the YAML spec is reserved for future use. Currently, the default list is set via the `TASKPRIM_LIST` environment variable only.
 
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
-| `default_list` | string | `""` | Default list name for new tasks when `--list` is omitted. |
+| `default_list` | string | `""` | *Reserved.* Use the `TASKPRIM_LIST` environment variable to set the default list for new tasks when `--list` is omitted. |
 
 ### `embedding` (knowledgeprim only)
 
@@ -124,8 +124,8 @@ Vector embedding configuration. When a provider is configured, knowledgeprim gen
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
 | `provider` | string | `""` | Embedding provider: `gemini`, `openai`, or `custom`. Empty string disables embedding. |
-| `model` | string | `""` | Provider-specific model name (e.g., `gemini-embedding-001` for Gemini, `text-embedding-3-small` for OpenAI). |
-| `dimensions` | int | `768` | Expected output vector dimensions. Must match the model's output. `gemini-embedding-001` defaults to 3072; set this accordingly. |
+| `model` | string | `""` | Provider-specific model name (e.g., `text-embedding-004` for Gemini, `text-embedding-3-small` for OpenAI). |
+| `dimensions` | int | `768` | Expected output vector dimensions. Must match the model's output. |
 | `api_key` | string | — | API key for the embedding provider. Use `${ENV_VAR}` interpolation. |
 | `endpoint` | string | `""` | Custom endpoint URL. Required for `custom` provider. Optional for `openai` (overrides default). Unused for `gemini`. |
 
@@ -133,7 +133,7 @@ Vector embedding configuration. When a provider is configured, knowledgeprim gen
 
 | Provider | Model | Dimensions | Notes |
 |----------|-------|------------|-------|
-| `gemini` | `gemini-embedding-001` | 3072 | Google Gemini (supports 768/1536/3072 via Matryoshka) |
+| `gemini` | `text-embedding-004` | 768 | Google Gemini (default model; supports Matryoshka dimensions) |
 | `openai` | `text-embedding-3-small` | 1536 | OpenAI |
 | `openai` | `text-embedding-3-large` | 3072 | OpenAI (highest quality) |
 | `custom` | Any | Configurable | Any OpenAI-compatible endpoint (local models, proxies) |
@@ -300,8 +300,8 @@ storage:
 
 embedding:
   provider: gemini
-  model: gemini-embedding-001
-  dimensions: 3072
+  model: text-embedding-004
+  dimensions: 768
   api_key: ${GEMINI_API_KEY}
 
 auto_connect:

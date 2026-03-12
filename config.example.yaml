@@ -52,7 +52,7 @@ taskprim:
 # Without embedding, FTS5 search, manual edges, and discovery still work.
 embedding:
   provider: ""                # gemini | openai | custom (empty = disabled)
-  # model: gemini-embedding-001          # Gemini (3072d default; also supports 768/1536 via Matryoshka)
+  # model: text-embedding-004            # Gemini (768d default; supports Matryoshka dimensions)
   # model: text-embedding-3-small       # OpenAI
   # dimensions: 768                     # must match model output
   # api_key: ${EMBEDDING_API_KEY}

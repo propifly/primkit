@@ -42,7 +42,7 @@ cd primkit && go test -v -race -count=1 ./...
 
 ## Tech stack
 
-- Go 1.22+
+- Go 1.26+
 - Pure Go SQLite (`modernc.org/sqlite`) — no CGo
 - CLI: `github.com/spf13/cobra`
 - Config: `gopkg.in/yaml.v3` + env var overrides

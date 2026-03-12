@@ -326,7 +326,7 @@ knowledgeprim prevents this with an `embedding_meta` record stored in the databa
 If you change your embedding config after a database has vectors, the next capture or vector search will fail with:
 
 ```
-embedding model mismatch: db uses gemini/gemini-embedding-001 (3072d),
+embedding model mismatch: db uses gemini/text-embedding-004 (768d),
 config uses openai/text-embedding-3-small (1536d).
 Use --mode fts, run re-embed, or pass --force
 ```

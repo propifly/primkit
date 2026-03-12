@@ -4,7 +4,7 @@ Thank you for considering a contribution. This guide explains how to set up the 
 
 ## Development Setup
 
-**Requirements:** Go 1.22+
+**Requirements:** Go 1.26+
 
 ```bash
 git clone git@github.com:propifly/primkit.git
@@ -24,7 +24,7 @@ The project uses a Go workspace (`go.work`) with five modules:
 
 ```bash
 make test           # all modules, verbose, race detector
-make build          # compile both binaries
+make build          # compile all four binaries
 ```
 
 Individual modules:

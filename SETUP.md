@@ -1,12 +1,12 @@
 # Primkit Setup Guide
 
-Step-by-step instructions for setting up taskprim and stateprim with Cloudflare R2 replication.
+Step-by-step instructions for setting up primkit primitives with Cloudflare R2 replication.
 
 ---
 
 ## Prerequisites
 
-- Go 1.22+ installed
+- Go 1.26+ installed
 - A Cloudflare account (free tier works)
 
 ## 1. Build
