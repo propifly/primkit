@@ -28,7 +28,7 @@ func New(dbPath string) (*SQLiteStore, error) {
 		return nil, fmt.Errorf("opening store: %w", err)
 	}
 	if err := db.Migrate(database, migrations, "migrations"); err != nil {
-		database.Close()
+		_ = database.Close()
 		return nil, fmt.Errorf("running migrations: %w", err)
 	}
 	return &SQLiteStore{db: database}, nil
@@ -337,7 +337,7 @@ func (s *SQLiteStore) DoneTask(ctx context.Context, id string) error {
 	return s.resolveTask(ctx, id, model.StateDone, "")
 }
 
-func (s *SQLiteStore) KillTask(ctx context.Context, id string, reason string) error {
+func (s *SQLiteStore) KillTask(ctx context.Context, id, reason string) error {
 	if reason == "" {
 		return fmt.Errorf("reason is required when killing a task")
 	}

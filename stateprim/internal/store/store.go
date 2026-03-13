@@ -50,7 +50,7 @@ type Store interface {
 
 	// Purge deletes records older than the specified duration in a namespace.
 	// Returns the number of records deleted.
-	Purge(ctx context.Context, namespace string, olderThan string) (int, error)
+	Purge(ctx context.Context, namespace, olderThan string) (int, error)
 
 	// ListNamespaces returns all namespaces with their record counts.
 	ListNamespaces(ctx context.Context) ([]model.NamespaceInfo, error)

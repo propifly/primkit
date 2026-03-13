@@ -30,7 +30,7 @@ func Open(path string) (*sql.DB, error) {
 		return nil, err
 	}
 
-	if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
 		return nil, fmt.Errorf("creating database directory: %w", err)
 	}
 

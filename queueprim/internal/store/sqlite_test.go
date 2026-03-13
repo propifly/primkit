@@ -194,9 +194,10 @@ func TestDequeueJob_AtomicClaim(t *testing.T) {
 	got := 0
 	empty := 0
 	for _, r := range []result{r1, r2} {
-		if r.err == nil {
+		switch r.err {
+		case nil:
 			got++
-		} else if r.err == store.ErrEmpty {
+		case store.ErrEmpty:
 			empty++
 		}
 	}

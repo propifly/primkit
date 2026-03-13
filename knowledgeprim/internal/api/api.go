@@ -4,7 +4,6 @@ package api
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"log/slog"
 	"net/http"
 	"strconv"
@@ -437,6 +436,6 @@ func (h *Handler) handleStoreError(w http.ResponseWriter, action string, err err
 	default:
 		h.logger.Error(action, "error", err)
 		server.RespondError(w, http.StatusInternalServerError, "INTERNAL_ERROR",
-			fmt.Sprintf("an internal error occurred"))
+			"an internal error occurred")
 	}
 }

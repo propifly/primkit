@@ -41,7 +41,7 @@ type Store interface {
 
 	// KillTask marks a task as killed with a required reason explaining why it
 	// was dropped. Returns ErrNotFound or ErrInvalidTransition.
-	KillTask(ctx context.Context, id string, reason string) error
+	KillTask(ctx context.Context, id, reason string) error
 
 	// MarkSeen records that an agent has seen specific tasks. Uses upsert
 	// semantics — calling MarkSeen twice for the same (agent, task) updates
@@ -49,7 +49,7 @@ type Store interface {
 	MarkSeen(ctx context.Context, agent string, taskIDs []string) error
 
 	// MarkAllSeen marks all open tasks in a list as seen by the agent.
-	MarkAllSeen(ctx context.Context, agent string, list string) error
+	MarkAllSeen(ctx context.Context, agent, list string) error
 
 	// ListLabels returns all labels with the count of open tasks carrying each.
 	// If list is non-empty, only labels on tasks in that list are counted.
