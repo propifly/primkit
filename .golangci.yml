@@ -1,18 +1,85 @@
+version: "2"
+
 run:
   timeout: 5m
 
-linters:
+formatters:
   enable:
+    - gofumpt
+  settings:
+    gofumpt:
+      extra-rules: true
+
+linters:
+  default: none
+  enable:
+    # Correctness (v2 defaults)
     - errcheck
     - govet
     - staticcheck
     - unused
     - ineffassign
-    - gosimple
-
-issues:
-  exclude-rules:
-    # Allow unused parameters in test files.
-    - path: _test\.go
-      linters:
-        - unused
+    # Style
+    - revive
+    - errname
+    - predeclared
+    # Security
+    - gosec
+    # Resource leaks
+    - bodyclose
+    - sqlclosecheck
+    # Context discipline
+    - contextcheck
+    # Cleanup
+    - unconvert
+    - prealloc
+  settings:
+    revive:
+      rules:
+        - name: blank-imports
+        - name: context-as-argument
+        - name: dot-imports
+        - name: error-return
+        - name: error-strings
+        - name: increment-decrement
+        - name: var-naming
+        - name: range
+        - name: receiver-naming
+        - name: indent-error-flow
+    errcheck:
+      exclude-functions:
+        # Deferred cleanup — errors are not actionable.
+        - (database/sql.Rows).Close
+        - (*database/sql.Rows).Close
+        - (database/sql.Stmt).Close
+        - (*database/sql.Stmt).Close
+        - (database/sql.Tx).Rollback
+        - (*database/sql.Tx).Rollback
+        - (io.Closer).Close
+        - (*os.File).Close
+        - (*database/sql.DB).Close
+        - (net/http.ResponseWriter).Write
+        - (*text/tabwriter.Writer).Flush
+        - crypto/rand.Read
+        # CLI output — writing to stdout/stderr never fails in practice.
+        - fmt.Fprintf
+        - fmt.Fprintln
+        - fmt.Fprint
+        - (io.Writer).Write
+        - io.WriteString
+    gosec:
+      excludes:
+        - G104  # covered by errcheck
+        - G301  # 0o755 for directories is fine
+        - G304  # file paths come from CLI flags / config, not user HTTP input
+        - G306  # 0o644 for generated docs is fine
+  exclusions:
+    rules:
+      - path: _test\.go
+        linters:
+          - errcheck
+          - gosec
+      # SQL string formatting with parameterized values is safe.
+      - linters:
+          - gosec
+        text: "G20[12]"
