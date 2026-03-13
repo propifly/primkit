@@ -25,7 +25,7 @@ func TestDBPathFromConfig(t *testing.T) {
 	configPath := filepath.Join(dir, "config.yaml")
 
 	content := []byte("storage:\n  db: " + dbPath + "\n")
-	require.NoError(t, os.WriteFile(configPath, content, 0644))
+	require.NoError(t, os.WriteFile(configPath, content, 0o644))
 
 	root := NewRootCmd()
 	buf := &bytes.Buffer{}
@@ -52,7 +52,7 @@ func TestLoadEmbedConfig_EnvVarInterpolation(t *testing.T) {
 	dir := t.TempDir()
 	configPath := filepath.Join(dir, "config.yaml")
 	content := []byte("embedding:\n  provider: openai\n  api_key: ${TEST_EMBED_API_KEY}\n  model: text-embedding-3-small\n")
-	require.NoError(t, os.WriteFile(configPath, content, 0644))
+	require.NoError(t, os.WriteFile(configPath, content, 0o644))
 
 	cfg := loadEmbedConfig(configPath)
 	assert.Equal(t, "sk-test-abc123", cfg.APIKey,
@@ -69,7 +69,7 @@ func TestLoadEmbedConfig_MissingEnvVar(t *testing.T) {
 	dir := t.TempDir()
 	configPath := filepath.Join(dir, "config.yaml")
 	content := []byte("embedding:\n  provider: gemini\n  api_key: ${TEST_EMBED_API_KEY_MISSING}\n")
-	require.NoError(t, os.WriteFile(configPath, content, 0644))
+	require.NoError(t, os.WriteFile(configPath, content, 0o644))
 
 	cfg := loadEmbedConfig(configPath)
 	assert.Empty(t, cfg.APIKey,
@@ -85,7 +85,7 @@ func TestLoadEmbedConfig_EnvOverrideWins(t *testing.T) {
 	dir := t.TempDir()
 	configPath := filepath.Join(dir, "config.yaml")
 	content := []byte("embedding:\n  provider: openai\n  api_key: ${TEST_EMBED_FILE_KEY}\n")
-	require.NoError(t, os.WriteFile(configPath, content, 0644))
+	require.NoError(t, os.WriteFile(configPath, content, 0o644))
 
 	cfg := loadEmbedConfig(configPath)
 	assert.Equal(t, "sk-from-env", cfg.APIKey,

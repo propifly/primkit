@@ -32,7 +32,7 @@ func New(dbPath string) (*SQLiteStore, error) {
 		return nil, fmt.Errorf("opening store: %w", err)
 	}
 	if err := db.Migrate(database, migrations, "migrations"); err != nil {
-		database.Close()
+		_ = database.Close()
 		return nil, fmt.Errorf("running migrations: %w", err)
 	}
 	return &SQLiteStore{db: database, dbPath: dbPath}, nil
@@ -396,11 +396,6 @@ func (s *SQLiteStore) SearchVector(ctx context.Context, embedding []float32, fil
 	limit := resolveLimit(filter)
 
 	// Load all vectors and compute cosine similarity in Go.
-	type vecEntry struct {
-		entityID  string
-		embedding []float32
-	}
-
 	rows, err := s.db.QueryContext(ctx,
 		`SELECT entity_id, embedding FROM entity_vectors`)
 	if err != nil {
@@ -434,7 +429,7 @@ func (s *SQLiteStore) SearchVector(ctx context.Context, embedding []float32, fil
 	})
 
 	// Filter by type and limit.
-	var results []*model.SearchResult
+	results := make([]*model.SearchResult, 0, limit)
 	for _, entry := range entries {
 		if len(results) >= limit {
 			break
@@ -498,7 +493,7 @@ func (s *SQLiteStore) SearchHybrid(ctx context.Context, query string, embedding 
 		id    string
 		score float64
 	}
-	var ranked []rrfEntry
+	ranked := make([]rrfEntry, 0, len(rrfScores))
 	for id, score := range rrfScores {
 		ranked = append(ranked, rrfEntry{id: id, score: score})
 	}
@@ -508,7 +503,7 @@ func (s *SQLiteStore) SearchHybrid(ctx context.Context, query string, embedding 
 
 	// Take top N.
 	limit := resolveLimit(filter)
-	var results []*model.SearchResult
+	results := make([]*model.SearchResult, 0, limit)
 	for _, entry := range ranked {
 		if len(results) >= limit {
 			break
@@ -903,25 +898,39 @@ func (s *SQLiteStore) ListRelationships(ctx context.Context) ([]model.Relationsh
 func (s *SQLiteStore) Stats(ctx context.Context) (*model.Stats, error) {
 	stats := &model.Stats{DBPath: s.dbPath}
 
-	s.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM entities`).Scan(&stats.EntityCount)
-	s.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM edges`).Scan(&stats.EdgeCount)
-	s.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM entity_vectors`).Scan(&stats.VectorCount)
-	s.db.QueryRowContext(ctx, `SELECT COUNT(DISTINCT type) FROM entities`).Scan(&stats.TypeCount)
+	if err := s.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM entities`).Scan(&stats.EntityCount); err != nil {
+		return nil, fmt.Errorf("counting entities: %w", err)
+	}
+	if err := s.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM edges`).Scan(&stats.EdgeCount); err != nil {
+		return nil, fmt.Errorf("counting edges: %w", err)
+	}
+	if err := s.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM entity_vectors`).Scan(&stats.VectorCount); err != nil {
+		return nil, fmt.Errorf("counting entity_vectors: %w", err)
+	}
+	if err := s.db.QueryRowContext(ctx, `SELECT COUNT(DISTINCT type) FROM entities`).Scan(&stats.TypeCount); err != nil {
+		return nil, fmt.Errorf("counting types: %w", err)
+	}
 
 	// Orphan count.
-	s.db.QueryRowContext(ctx, `
+	if err := s.db.QueryRowContext(ctx, `
 		SELECT COUNT(*) FROM entities
 		WHERE id NOT IN (
 			SELECT source_id FROM edges
 			UNION
 			SELECT target_id FROM edges
-		)`).Scan(&stats.OrphanCount)
+		)`).Scan(&stats.OrphanCount); err != nil {
+		return nil, fmt.Errorf("counting orphans: %w", err)
+	}
 
 	// DB size (only works for file-based DBs).
 	if s.dbPath != "" && s.dbPath != ":memory:" {
 		var pageCount, pageSize int64
-		s.db.QueryRowContext(ctx, `PRAGMA page_count`).Scan(&pageCount)
-		s.db.QueryRowContext(ctx, `PRAGMA page_size`).Scan(&pageSize)
+		if err := s.db.QueryRowContext(ctx, `PRAGMA page_count`).Scan(&pageCount); err != nil {
+			return nil, fmt.Errorf("reading page_count: %w", err)
+		}
+		if err := s.db.QueryRowContext(ctx, `PRAGMA page_size`).Scan(&pageSize); err != nil {
+			return nil, fmt.Errorf("reading page_size: %w", err)
+		}
 		stats.DBSize = pageCount * pageSize
 	}
 

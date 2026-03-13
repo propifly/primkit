@@ -34,7 +34,7 @@ func New(dbPath string) (*SQLiteStore, error) {
 		return nil, fmt.Errorf("opening store: %w", err)
 	}
 	if err := db.Migrate(database, migrations, "migrations"); err != nil {
-		database.Close()
+		_ = database.Close()
 		return nil, fmt.Errorf("running migrations: %w", err)
 	}
 	return &SQLiteStore{db: database}, nil

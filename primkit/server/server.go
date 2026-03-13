@@ -51,7 +51,7 @@ func (s *Server) ListenAndServe(ctx context.Context) error {
 		s.logger.Info("shutting down server")
 		shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
-		if err := s.httpServer.Shutdown(shutdownCtx); err != nil {
+		if err := s.httpServer.Shutdown(shutdownCtx); err != nil { //nolint:contextcheck // shutdown needs its own timeout, independent of the cancelled server context
 			return fmt.Errorf("graceful shutdown failed: %w", err)
 		}
 		s.logger.Info("server stopped")

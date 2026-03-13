@@ -69,14 +69,6 @@ func seedJob(t *testing.T, s store.Store, queue string, payload interface{}, opt
 	return job
 }
 
-// withType returns an option to set the job type.
-func withType(t string) func(*model.Job) { return func(j *model.Job) { j.Type = t } }
-
-// withPriority returns an option to set the job priority.
-func withPriority(p model.Priority) func(*model.Job) {
-	return func(j *model.Job) { j.Priority = p }
-}
-
 // claimJob dequeues a job and returns it.
 func claimJob(t *testing.T, s store.Store, queue string) *model.Job {
 	t.Helper()
@@ -583,7 +575,7 @@ func TestDBPathFromConfig(t *testing.T) {
 	configPath := filepath.Join(dir, "config.yaml")
 
 	content := []byte("storage:\n  db: " + dbPath + "\n")
-	require.NoError(t, os.WriteFile(configPath, content, 0644))
+	require.NoError(t, os.WriteFile(configPath, content, 0o644))
 
 	root := NewRootCmd()
 	buf := &bytes.Buffer{}

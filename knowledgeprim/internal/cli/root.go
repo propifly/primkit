@@ -22,12 +22,14 @@ import (
 // contextKey is unexported to prevent collisions with other packages.
 type contextKey string
 
-const storeKey contextKey = "store"
-const configKey contextKey = "config"
-const dbPathKey contextKey = "dbpath"
-const replicatorKey contextKey = "replicator"
-const embedderKey contextKey = "embedder"
-const embedCfgKey contextKey = "embedcfg"
+const (
+	storeKey      contextKey = "store"
+	configKey     contextKey = "config"
+	dbPathKey     contextKey = "dbpath"
+	replicatorKey contextKey = "replicator"
+	embedderKey   contextKey = "embedder"
+	embedCfgKey   contextKey = "embedcfg"
+)
 
 // storeFromContext extracts the Store from the command's context.
 func storeFromContext(ctx context.Context) store.Store {

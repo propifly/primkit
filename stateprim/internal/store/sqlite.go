@@ -31,7 +31,7 @@ func New(dbPath string) (*SQLiteStore, error) {
 		return nil, fmt.Errorf("opening store: %w", err)
 	}
 	if err := db.Migrate(database, migrations, "migrations"); err != nil {
-		database.Close()
+		_ = database.Close()
 		return nil, fmt.Errorf("running migrations: %w", err)
 	}
 	return &SQLiteStore{db: database}, nil
@@ -273,7 +273,7 @@ func (s *SQLiteStore) Query(ctx context.Context, filter *model.QueryFilter) ([]*
 // Purge
 // ---------------------------------------------------------------------------
 
-func (s *SQLiteStore) Purge(ctx context.Context, namespace string, olderThan string) (int, error) {
+func (s *SQLiteStore) Purge(ctx context.Context, namespace, olderThan string) (int, error) {
 	d, err := parseDuration(olderThan)
 	if err != nil {
 		return 0, fmt.Errorf("invalid duration: %w", err)
@@ -447,7 +447,7 @@ func scanRecordRows(rows *sql.Rows) (*model.Record, error) {
 // prevents collisions.
 func generateAppendKey(t time.Time) string {
 	b := make([]byte, 4)
-	rand.Read(b)
+	_, _ = rand.Read(b)
 	return fmt.Sprintf("a_%s_%s",
 		t.Format("20060102T150405"),
 		hex.EncodeToString(b),

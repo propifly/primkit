@@ -151,7 +151,8 @@ func checkEmbeddingCompat(cmd *cobra.Command, s store.Store, embedder interface 
 	Provider() string
 	Model() string
 	Dimensions() int
-}) error {
+},
+) error {
 	sqlStore, ok := s.(*store.SQLiteStore)
 	if !ok {
 		return nil // Non-SQLite stores don't support metadata checks.
