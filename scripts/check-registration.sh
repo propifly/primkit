@@ -73,17 +73,17 @@ for PRIM in "${PRIMS[@]}"; do
   fi
 
   # 3. Makefile: lint target
-  if file_contains "$ROOT/Makefile" "cd ${PRIM} && go vet"; then
+  if file_contains "$ROOT/Makefile" "cd ${PRIM} && golangci-lint run"; then
     pass "Makefile lint target"
   else
-    fail "Makefile lint target — missing: cd ${PRIM} && go vet"
+    fail "Makefile lint target — missing: cd ${PRIM} && golangci-lint run"
   fi
 
   # 4. Makefile: fmt target
-  if file_contains "$ROOT/Makefile" "cd ${PRIM} && gofmt"; then
+  if file_contains "$ROOT/Makefile" "cd ${PRIM} && gofumpt"; then
     pass "Makefile fmt target"
   else
-    fail "Makefile fmt target — missing: cd ${PRIM} && gofmt"
+    fail "Makefile fmt target — missing: cd ${PRIM} && gofumpt"
   fi
 
   # 5. Makefile: tidy target
