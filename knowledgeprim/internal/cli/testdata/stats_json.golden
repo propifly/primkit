@@ -1,0 +1,9 @@
+{
+  "entity_count": 2,
+  "edge_count": 1,
+  "vector_count": 0,
+  "orphan_count": 0,
+  "type_count": 2,
+  "db_size_bytes": 0,
+  "db_path": ":memory:"
+}

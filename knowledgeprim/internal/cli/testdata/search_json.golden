@@ -1,0 +1,26 @@
+[
+  {
+    "entity": {
+      "id": "<ID>",
+      "type": "thought",
+      "title": "LLMs will commoditize",
+      "body": "Large language models becoming commodities",
+      "source": "test",
+      "created_at": "<TIMESTAMP>",
+      "updated_at": "<TIMESTAMP>"
+    },
+    "score": <SCORE>
+  },
+  {
+    "entity": {
+      "id": "<ID>",
+      "type": "article",
+      "title": "On-Device LLMs",
+      "body": "Running large language models on edge devices",
+      "source": "test",
+      "created_at": "<TIMESTAMP>",
+      "updated_at": "<TIMESTAMP>"
+    },
+    "score": <SCORE>
+  }
+]

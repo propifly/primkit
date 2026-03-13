@@ -1,0 +1,8 @@
+{
+  "namespace": "app",
+  "key": "theme",
+  "value": "dark",
+  "immutable": false,
+  "created_at": "<TIMESTAMP>",
+  "updated_at": "<TIMESTAMP>"
+}

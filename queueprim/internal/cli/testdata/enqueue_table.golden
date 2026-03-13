@@ -1,0 +1,9 @@
+ID:           <ID>
+Queue:        emails
+Priority:     normal
+Status:       pending
+AttemptCount: 0 / MaxRetries: 0
+Payload:      {"to":"test@example.com"}
+VisibleAfter: <TIMESTAMP>
+CreatedAt:    <TIMESTAMP>
+UpdatedAt:    <TIMESTAMP>

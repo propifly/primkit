@@ -1,0 +1,14 @@
+[
+  {
+    "id": "<ID>",
+    "list": "inbox",
+    "what": "Buy groceries",
+    "source": "test",
+    "state": "open",
+    "labels": [
+      "urgent"
+    ],
+    "created": "<TIMESTAMP>",
+    "updated": "<TIMESTAMP>"
+  }
+]
