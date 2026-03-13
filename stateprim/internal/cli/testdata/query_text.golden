@@ -1,0 +1,3 @@
+NAMESPACE  KEY    IMMUTABLE  UPDATED               VALUE
+app        lang   false      <TIMESTAMP>  "en"
+app        theme  false      <TIMESTAMP>  "dark"

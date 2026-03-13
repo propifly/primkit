@@ -1,0 +1,9 @@
+{
+  "id": "<ID>",
+  "type": "concept",
+  "title": "Retrieval augmented generation",
+  "body": "Combining search with LLM generation",
+  "source": "test",
+  "created_at": "<TIMESTAMP>",
+  "updated_at": "<TIMESTAMP>"
+}
