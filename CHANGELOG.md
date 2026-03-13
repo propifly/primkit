@@ -15,6 +15,46 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   the flag bypass database initialization so they work without a configured DB.
   Makefile `build` and `build-pi` targets, and `.goreleaser.yml`, now inject
   `-X …/cli.Version` automatically.
+- **all prims**: Golden file tests for all CLI output. Each prim now has
+  `golden_test.go` and `golden_cli_test.go` with table-driven subtests that
+  snapshot every command's text and JSON output. Dynamic values (nanoid IDs,
+  timestamps) are normalized so golden files are deterministic. Run
+  `go test -run TestGolden -update ./internal/cli/` to regenerate after
+  intentional output changes. 62 golden files total across all four prims.
+- **knowledgeprim**: Fuzz test for FTS5 query sanitizer
+  (`FuzzSanitizeFTS5Query`). Seeds from 21 known edge cases, each iteration
+  sanitizes random input and executes it against an in-memory FTS5 table to
+  verify no SQL syntax errors. CI runs for 30 seconds on every push.
+- **ci**: `govulncheck` job scans all five modules for known vulnerabilities
+  on every push and PR.
+- **ci**: Cosign keyless signing for release binaries via Sigstore OIDC.
+  Checksums file is signed automatically on tag push; consumers can verify
+  with `cosign verify-blob`.
+
+### Fixed
+
+- **knowledgeprim**: FTS5 query sanitizer hardened against five additional
+  edge cases found by fuzzing: embedded null bytes inside quoted tokens,
+  bare control characters, tokens that look pre-quoted but contain special
+  chars, and multi-byte sequences that split across quote boundaries. The
+  "already quoted" fast path was removed — all tokens now go through the
+  full sanitization pipeline.
+
+### Changed
+
+- **contributor tooling**: Linting upgraded from `go vet` to golangci-lint v2
+  with 15 linters (errcheck, govet, staticcheck, unused, ineffassign, gosimple,
+  revive, stylecheck, errname, gosec, bodyclose, sqlclosecheck, unconvert,
+  prealloc, predeclared). Formatting upgraded from `gofmt` to `gofumpt`.
+  `make lint` and `make fmt` use the new tools. CI runs both plus format
+  checking.
+- **contributor tooling**: `CONTRIBUTING.md` rewritten for open-source
+  contributors — documents Conventional Commits, golangci-lint configuration,
+  golden file update workflow, fuzz testing instructions, `make all` as
+  pre-PR checklist, and cosign verification for release consumers.
+- **contributor tooling**: `scripts/check-registration.sh` and
+  `scripts/new-prim.sh` updated to validate and scaffold with `golangci-lint`
+  and `gofumpt` instead of `go vet` and `gofmt`.
 
 ## [v0.4.1] - 2026-03-09
 

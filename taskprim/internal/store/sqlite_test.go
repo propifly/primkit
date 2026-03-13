@@ -274,8 +274,8 @@ func TestUpdateTask_ClearWaitingOn(t *testing.T) {
 	waitingOn := "someone"
 	task := seedTask(t, s, func(task *model.Task) { task.WaitingOn = &waitingOn })
 
-	clear := ""
-	err := s.UpdateTask(ctx, task.ID, &model.TaskUpdate{WaitingOn: &clear})
+	emptyStr := ""
+	err := s.UpdateTask(ctx, task.ID, &model.TaskUpdate{WaitingOn: &emptyStr})
 	require.NoError(t, err)
 
 	got, err := s.GetTask(ctx, task.ID)

@@ -374,10 +374,10 @@ fi
 add_to_makefile "go test" "	cd $NAME && go test -v -race -count=1 ./..."
 
 # lint target
-add_to_makefile "go vet" "	cd $NAME && go vet ./..."
+add_to_makefile "golangci-lint run" "	cd $NAME && golangci-lint run ./..."
 
 # fmt target
-add_to_makefile "gofmt" "	cd $NAME && gofmt -s -w ."
+add_to_makefile "gofumpt" "	cd $NAME && gofumpt -w ."
 
 # tidy target
 # Note: queueprim has special logic to strip primkit from go.mod (see its tidy entry).

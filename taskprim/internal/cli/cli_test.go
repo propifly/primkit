@@ -723,7 +723,7 @@ func TestImport_MissingFile(t *testing.T) {
 
 // writeFile is a tiny test helper to write a string to a file.
 func writeFile(path, content string) error {
-	return os.WriteFile(path, []byte(content), 0644)
+	return os.WriteFile(path, []byte(content), 0o644)
 }
 
 // --------------------------------------------------------------------
@@ -843,7 +843,7 @@ func TestDBPathFromConfig(t *testing.T) {
 	configPath := filepath.Join(dir, "config.yaml")
 
 	content := []byte("storage:\n  db: " + dbPath + "\n")
-	require.NoError(t, os.WriteFile(configPath, content, 0644))
+	require.NoError(t, os.WriteFile(configPath, content, 0o644))
 
 	root := NewRootCmd()
 	buf := &bytes.Buffer{}

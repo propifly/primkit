@@ -504,7 +504,7 @@ func TestDBPathFromConfig(t *testing.T) {
 	configPath := filepath.Join(dir, "config.yaml")
 
 	content := []byte("storage:\n  db: " + dbPath + "\n")
-	require.NoError(t, os.WriteFile(configPath, content, 0644))
+	require.NoError(t, os.WriteFile(configPath, content, 0o644))
 
 	root := NewRootCmd()
 	buf := &bytes.Buffer{}

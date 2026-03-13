@@ -5,13 +5,12 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"log/slog"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 	"time"
-
-	"log/slog"
-	"os"
 
 	"github.com/propifly/primkit/primkit/db"
 	"github.com/propifly/primkit/queueprim/internal/api"

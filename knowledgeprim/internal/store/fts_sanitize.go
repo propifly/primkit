@@ -22,32 +22,45 @@ func sanitizeFTS5Query(query string) string {
 
 	tokens := strings.Fields(query)
 	for i, tok := range tokens {
-		// Already quoted — leave as-is.
-		if len(tok) >= 2 && tok[0] == '"' && tok[len(tok)-1] == '"' {
-			continue
-		}
-
 		needsQuote := keywords[tok]
 		if !needsQuote {
 			for _, ch := range tok {
-				switch ch {
-				case '-', ':', '*', '^', '(', ')', '{', '}':
+				// Quote any token with non-alphanumeric characters. FTS5 only
+				// guarantees that letters, digits, and underscores are safe in
+				// bare (unquoted) tokens.
+				if (ch < 'a' || ch > 'z') && (ch < 'A' || ch > 'Z') &&
+					(ch < '0' || ch > '9') && ch != '_' {
 					needsQuote = true
-				}
-				if needsQuote {
 					break
 				}
 			}
 		}
 
 		if needsQuote {
-			// Strip any embedded double quotes to prevent breaking out.
-			clean := strings.ReplaceAll(tok, `"`, "")
+			// Strip double quotes (prevent breaking out) and control
+			// characters (null bytes etc. cause FTS5 unterminated string
+			// errors even inside quotes).
+			clean := strings.Map(func(r rune) rune {
+				if r == '"' || r < 0x20 {
+					return -1 // drop
+				}
+				return r
+			}, tok)
 			if clean != "" {
 				tokens[i] = `"` + clean + `"`
+			} else {
+				// Token was nothing but quotes/control chars — drop it.
+				tokens[i] = ""
 			}
 		}
 	}
 
-	return strings.Join(tokens, " ")
+	// Rebuild, dropping any empty tokens from quote-only inputs.
+	var out []string
+	for _, tok := range tokens {
+		if tok != "" {
+			out = append(out, tok)
+		}
+	}
+	return strings.Join(out, " ")
 }

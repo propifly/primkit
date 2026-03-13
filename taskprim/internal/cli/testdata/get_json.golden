@@ -1,0 +1,9 @@
+{
+  "id": "<ID>",
+  "list": "default",
+  "what": "Get test task",
+  "source": "test",
+  "state": "open",
+  "created": "<TIMESTAMP>",
+  "updated": "<TIMESTAMP>"
+}

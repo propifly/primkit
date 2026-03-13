@@ -1,0 +1,8 @@
+{
+  "id": "<ID>",
+  "type": "thought",
+  "title": "Edge compute is the real moat",
+  "source": "test",
+  "created_at": "<TIMESTAMP>",
+  "updated_at": "<TIMESTAMP>"
+}

@@ -74,7 +74,8 @@ A background sweeper runs every minute to release expired claims.
 // runSweeper runs the expired-claim sweeper every minute until ctx is done.
 func runSweeper(ctx context.Context, s interface {
 	SweepExpiredClaims(context.Context) (int, error)
-}, logger *slog.Logger) {
+}, logger *slog.Logger,
+) {
 	ticker := time.NewTicker(time.Minute)
 	defer ticker.Stop()
 

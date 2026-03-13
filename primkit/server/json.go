@@ -44,7 +44,7 @@ func Respond(w http.ResponseWriter, status int, data interface{}) {
 	if data != nil {
 		enc := json.NewEncoder(w)
 		enc.SetIndent("", "  ")
-		enc.Encode(data)
+		enc.Encode(data) //nolint:errcheck // WriteHeader already sent; encoding failure is unrecoverable
 	}
 }
 

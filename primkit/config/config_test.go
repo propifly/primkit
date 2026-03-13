@@ -65,7 +65,7 @@ func TestLoad_MalformedYAML(t *testing.T) {
 	// Write a temporary malformed YAML file.
 	dir := t.TempDir()
 	path := filepath.Join(dir, "bad.yaml")
-	require.NoError(t, os.WriteFile(path, []byte("{{invalid yaml"), 0644))
+	require.NoError(t, os.WriteFile(path, []byte("{{invalid yaml"), 0o644))
 
 	_, err := Load(path)
 	assert.Error(t, err)
@@ -132,7 +132,7 @@ func TestLoad_StorageDBFromConfig(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "config.yaml")
 	content := []byte("storage:\n  db: /custom/path/to.db\n")
-	require.NoError(t, os.WriteFile(path, content, 0644))
+	require.NoError(t, os.WriteFile(path, content, 0o644))
 
 	cfg, err := Load(path)
 	require.NoError(t, err)
@@ -170,7 +170,7 @@ func TestLoad_R2AllFieldsInterpolated(t *testing.T) {
 func TestLoadWithEnvOverrides_ConfigFileWinsOverEnvVar(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "config.yaml")
-	require.NoError(t, os.WriteFile(path, []byte("storage:\n  db: /from/config.db\n"), 0644))
+	require.NoError(t, os.WriteFile(path, []byte("storage:\n  db: /from/config.db\n"), 0o644))
 
 	t.Setenv("STATEPRIM_DB", "/from/env.db")
 
@@ -199,8 +199,8 @@ func TestLoadWithEnvOverrides_MultiAgentConfigFilesNotStompedByGlobalEnvVar(t *t
 
 	agentAConfig := filepath.Join(dir, "agent-a.yaml")
 	agentBConfig := filepath.Join(dir, "agent-b.yaml")
-	require.NoError(t, os.WriteFile(agentAConfig, []byte("storage:\n  db: /data/agent-a.db\n"), 0644))
-	require.NoError(t, os.WriteFile(agentBConfig, []byte("storage:\n  db: /data/agent-b.db\n"), 0644))
+	require.NoError(t, os.WriteFile(agentAConfig, []byte("storage:\n  db: /data/agent-a.db\n"), 0o644))
+	require.NoError(t, os.WriteFile(agentBConfig, []byte("storage:\n  db: /data/agent-b.db\n"), 0o644))
 
 	// Simulate a global env var present in the deployment environment.
 	t.Setenv("TASKPRIM_DB", "/data/global-override.db")

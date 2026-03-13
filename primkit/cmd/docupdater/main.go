@@ -23,8 +23,9 @@ func main() {
 		os.Exit(1)
 	}
 
-	var metas []docgen.PrimMeta
-	for _, path := range strings.Split(*inputs, ",") {
+	parts := strings.Split(*inputs, ",")
+	metas := make([]docgen.PrimMeta, 0, len(parts))
+	for _, path := range parts {
 		path = strings.TrimSpace(path)
 		if path == "" {
 			continue

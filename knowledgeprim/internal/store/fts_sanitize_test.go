@@ -2,9 +2,11 @@ package store
 
 import (
 	"context"
+	"strings"
 	"testing"
 
 	"github.com/propifly/primkit/knowledgeprim/internal/model"
+	"github.com/propifly/primkit/primkit/db"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -145,4 +147,74 @@ func TestSearchHybrid_HyphenatedTerm(t *testing.T) {
 	results, err := s.SearchHybrid(context.Background(), "agent-first", nil, nil)
 	require.NoError(t, err)
 	assert.Greater(t, len(results), 0)
+}
+
+// ---------------------------------------------------------------------------
+// Fuzz test: sanitizeFTS5Query must never produce an FTS5 syntax error
+// ---------------------------------------------------------------------------
+
+func FuzzSanitizeFTS5Query(f *testing.F) {
+	// Seed corpus from existing unit test cases.
+	seeds := []string{
+		"privacy",
+		"privacy devices",
+		"agent-first",
+		"real-time-inference",
+		"the agent-first approach",
+		"title:privacy",
+		"priv*",
+		"^privacy",
+		"(privacy)",
+		"{privacy}",
+		"privacy AND devices",
+		"privacy OR devices",
+		"NOT privacy",
+		"privacy NEAR devices",
+		"privacy and devices",
+		`"agent-first"`,
+		"",
+		"   ",
+		`ag"ent-first`,
+		"agent-first real-time title:test",
+		"  agent-first  ",
+	}
+	for _, s := range seeds {
+		f.Add(s)
+	}
+
+	f.Fuzz(func(t *testing.T, input string) {
+		sanitized := sanitizeFTS5Query(input)
+
+		// Empty/whitespace input must produce empty output.
+		if strings.TrimSpace(input) == "" {
+			if sanitized != "" {
+				t.Errorf("empty input %q produced non-empty output: %q", input, sanitized)
+			}
+			return
+		}
+		if sanitized == "" {
+			return
+		}
+
+		// The critical property: sanitized queries must not cause FTS5 errors.
+		database, err := db.OpenInMemory()
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer database.Close()
+
+		_, err = database.Exec(`CREATE VIRTUAL TABLE IF NOT EXISTS fuzz_fts USING fts5(title, body)`)
+		if err != nil {
+			t.Fatal(err)
+		}
+		_, err = database.Exec(`INSERT INTO fuzz_fts(title, body) VALUES ('test title', 'test body content')`)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		_, err = database.Exec("SELECT * FROM fuzz_fts WHERE fuzz_fts MATCH ?", sanitized)
+		if err != nil {
+			t.Errorf("sanitizeFTS5Query(%q) = %q caused FTS5 error: %v", input, sanitized, err)
+		}
+	})
 }

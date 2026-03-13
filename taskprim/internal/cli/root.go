@@ -19,10 +19,12 @@ import (
 // contextKey is unexported to prevent collisions with other packages.
 type contextKey string
 
-const storeKey contextKey = "store"
-const configKey contextKey = "config"
-const dbPathKey contextKey = "dbpath"
-const replicatorKey contextKey = "replicator"
+const (
+	storeKey      contextKey = "store"
+	configKey     contextKey = "config"
+	dbPathKey     contextKey = "dbpath"
+	replicatorKey contextKey = "replicator"
+)
 
 // storeFromContext extracts the Store from the command's context.
 // Panics if the store is not set — this should never happen because
