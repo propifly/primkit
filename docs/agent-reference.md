@@ -59,7 +59,7 @@ Always use `--format json` for programmatic consumption.
 
 ## taskprim
 
-Task management with lifecycle tracking. Tasks follow: `open` -> `done` | `killed`.
+Task management with lifecycle tracking. Tasks follow: `open` -> `done` | `killed`. Supports structural task-to-task dependencies with cycle detection and frontier queries.
 
 ### Commands
 
@@ -122,17 +122,33 @@ Task management with lifecycle tracking. Tasks follow: `open` -> `done` | `kille
 }
 ```
 
+**DepEdge object (`dep ls --format json`, `dep-edges` API):**
+
+```json
+[
+  {
+    "task_id": "t_blockedTask",
+    "depends_on": "t_prerequisite"
+  }
+]
+```
+
+`**frontier --format json**` returns `[Task, ...]` — open tasks with all dependencies resolved or no dependencies.
+
 ### Idempotency
 
 
 | Command                                   | Idempotent | Notes                                                                             |
 | ----------------------------------------- | ---------- | --------------------------------------------------------------------------------- |
-| `add`                                     | No         | Creates a new task every call. Deduplicate by checking `list --format json` first |
-| `list`, `get`, `labels`, `lists`, `stats` | Yes        | Read-only                                                                         |
-| `done`, `kill`                            | Yes        | Calling on already-resolved task is a no-op                                       |
-| `edit`                                    | Yes        | Same edit applied twice produces same result                                      |
-| `seen`                                    | Yes        | Re-marking as seen updates the timestamp                                          |
-| `export`                                  | Yes        | Read-only                                                                         |
+| `add`                                                    | No         | Creates a new task every call. Deduplicate by checking `list --format json` first |
+| `list`, `get`, `labels`, `lists`, `stats`, `frontier`   | Yes        | Read-only                                                                         |
+| `done`, `kill`                                           | Yes        | Calling on already-resolved task is a no-op                                       |
+| `edit`                                                   | Yes        | Same edit applied twice produces same result                                      |
+| `seen`                                                   | Yes        | Re-marking as seen updates the timestamp                                          |
+| `dep add`                                                | Yes        | Adding an existing edge is a no-op (INSERT OR IGNORE)                             |
+| `dep rm`                                                 | Yes        | Removing a non-existent edge is a no-op                                           |
+| `dep ls`, `deps-of`                                      | Yes        | Read-only                                                                         |
+| `export`                                                 | Yes        | Read-only                                                                         |
 
 
 ### Decision Tree
@@ -142,6 +158,11 @@ Task management with lifecycle tracking. Tasks follow: `open` -> `done` | `kille
 - **Track what you've seen**: `seen <agent-name>` then later `list --unseen-by <agent-name>`
 - **Mark complete**: `done <id>` (successful) or `kill <id>` (abandoned)
 - **Subtasks**: `add "<what>" --list <list> --parent <parent-id>`
+- **Add dependency** (B depends on A): `dep add <B-id> <A-id>`
+- **Remove dependency**: `dep rm <B-id> <A-id>`
+- **Check what a task depends on**: `dep ls <id> --format json`
+- **Check what depends on a task**: `deps-of <id> --format json`
+- **What can I work on next?**: `frontier --format json` (or `frontier --list <list>`)
 
 ---
 
@@ -526,6 +547,10 @@ All primitives return non-zero exit codes on error. Error messages go to stderr.
 | `"embedding model mismatch"`                     | Configured embedding provider differs from what's in the db              | Use `--mode fts`, run `re-embed`, match config to db, or pass `--force` |
 | `"entity not found"`                             | Entity ID doesn't exist                                                  | Verify ID with `search` or `types`                                      |
 | `"database is locked"`                           | Another process holds the SQLite lock                                    | Retry after a short delay (SQLite busy timeout handles most cases)      |
+| `"cyclic dependency"`                            | `dep add` would create a cycle in the dependency graph                   | Restructure dependencies to avoid the cycle                             |
+| `"self dependency"`                              | `dep add` with same ID for both args                                     | Use two different task IDs                                              |
+| `"task is resolved"`                             | `dep add` on a done or killed task                                       | Only add dependencies to open tasks                                     |
+| `"dependency not found"`                         | `dep rm` for an edge that doesn't exist                                  | Verify with `dep ls` first                                              |
 | `"list is required"`                             | taskprim `add` without `--list`                                          | Add `--list <list>`                                                     |
 | `"namespace is required"`                        | stateprim command without namespace arg                                  | Provide namespace as first positional arg                               |
 | `"queue is required"`                            | queueprim command without queue positional arg                           | Provide queue as first positional arg                                   |
