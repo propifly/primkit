@@ -59,6 +59,14 @@ func (h *Handler) Router() http.Handler {
 	// Seen tracking.
 	mux.HandleFunc("POST /v1/seen/{agent}", h.markSeen)
 
+	// Dependencies.
+	mux.HandleFunc("POST /v1/tasks/{id}/deps", h.addDep)
+	mux.HandleFunc("DELETE /v1/tasks/{id}/deps/{dep_id}", h.removeDep)
+	mux.HandleFunc("GET /v1/tasks/{id}/deps", h.listDeps)
+	mux.HandleFunc("GET /v1/tasks/{id}/dependents", h.listDependents)
+	mux.HandleFunc("GET /v1/frontier", h.frontier)
+	mux.HandleFunc("GET /v1/dep-edges", h.depEdges)
+
 	// Labels and lists.
 	mux.HandleFunc("POST /v1/labels/{name}/clear", h.clearLabel)
 	mux.HandleFunc("GET /v1/labels", h.listLabels)
@@ -236,6 +244,101 @@ func (h *Handler) killTask(w http.ResponseWriter, r *http.Request) {
 	}
 
 	server.Respond(w, http.StatusOK, task)
+}
+
+// ---------------------------------------------------------------------------
+// Dependencies
+// ---------------------------------------------------------------------------
+
+type addDepRequest struct {
+	DependsOn string `json:"depends_on"`
+}
+
+func (h *Handler) addDep(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+
+	var req addDepRequest
+	if err := server.Decode(r, &req); err != nil {
+		server.RespondError(w, http.StatusBadRequest, "INVALID_JSON", err.Error())
+		return
+	}
+	if req.DependsOn == "" {
+		server.RespondError(w, http.StatusBadRequest, "DEPENDS_ON_REQUIRED", "depends_on is required")
+		return
+	}
+
+	if err := h.store.AddDep(r.Context(), id, req.DependsOn); err != nil {
+		h.handleStoreError(w, "adding dep", err)
+		return
+	}
+
+	server.Respond(w, http.StatusCreated, map[string]string{
+		"task_id":    id,
+		"depends_on": req.DependsOn,
+		"status":     "ok",
+	})
+}
+
+func (h *Handler) removeDep(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	depID := r.PathValue("dep_id")
+
+	if err := h.store.RemoveDep(r.Context(), id, depID); err != nil {
+		h.handleStoreError(w, "removing dep", err)
+		return
+	}
+
+	server.Respond(w, http.StatusOK, map[string]string{
+		"status": "ok",
+	})
+}
+
+func (h *Handler) listDeps(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+
+	tasks, err := h.store.Deps(r.Context(), id)
+	if err != nil {
+		h.handleStoreError(w, "listing deps", err)
+		return
+	}
+
+	server.Respond(w, http.StatusOK, tasks)
+}
+
+func (h *Handler) listDependents(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+
+	tasks, err := h.store.Dependents(r.Context(), id)
+	if err != nil {
+		h.handleStoreError(w, "listing dependents", err)
+		return
+	}
+
+	server.Respond(w, http.StatusOK, tasks)
+}
+
+func (h *Handler) frontier(w http.ResponseWriter, r *http.Request) {
+	list := r.URL.Query().Get("list")
+
+	tasks, err := h.store.Frontier(r.Context(), list)
+	if err != nil {
+		h.handleStoreError(w, "querying frontier", err)
+		return
+	}
+
+	server.Respond(w, http.StatusOK, tasks)
+}
+
+func (h *Handler) depEdges(w http.ResponseWriter, r *http.Request) {
+	list := r.URL.Query().Get("list")
+
+	edges, err := h.store.DepEdges(r.Context(), list)
+	if err != nil {
+		h.handleStoreError(w, "querying dep edges", err)
+		return
+	}
+
+	server.Respond(w, http.StatusOK, edges)
 }
 
 // ---------------------------------------------------------------------------
@@ -420,6 +523,14 @@ func (h *Handler) handleStoreError(w http.ResponseWriter, action string, err err
 		server.RespondError(w, http.StatusNotFound, "NOT_FOUND", "task not found")
 	case errors.Is(err, store.ErrInvalidTransition):
 		server.RespondError(w, http.StatusConflict, "INVALID_TRANSITION", err.Error())
+	case errors.Is(err, store.ErrCyclicDependency):
+		server.RespondError(w, http.StatusConflict, "CYCLIC_DEPENDENCY", "adding this dependency would create a cycle")
+	case errors.Is(err, store.ErrSelfDependency):
+		server.RespondError(w, http.StatusBadRequest, "SELF_DEPENDENCY", "a task cannot depend on itself")
+	case errors.Is(err, store.ErrTaskResolved):
+		server.RespondError(w, http.StatusConflict, "TASK_RESOLVED", "cannot add dependency to a resolved task")
+	case errors.Is(err, store.ErrDepNotFound):
+		server.RespondError(w, http.StatusNotFound, "DEP_NOT_FOUND", "dependency not found")
 	default:
 		h.logger.Error(action, "error", err)
 		server.RespondError(w, http.StatusInternalServerError, "INTERNAL_ERROR",

@@ -8,6 +8,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- **taskprim**: Task dependency graph — structural task-to-task dependencies
+  with cycle detection, frontier queries, and reverse lookups. Adds `task_deps`
+  table via `002_task_deps.sql` migration (additive only — no existing tables
+  or interfaces changed).
+  - Store: `AddDep`, `RemoveDep`, `Deps`, `Dependents`, `Frontier`, `DepEdges`
+  - CLI: `dep add`, `dep rm`, `dep ls`, `deps-of`, `frontier` (with `--list` filter)
+  - HTTP API: 6 new endpoints under `/deps`, `/dependents`, `/frontier`, `/dep-edges`
+  - MCP: 5 new tools (`taskprim_dep_add`, `taskprim_dep_remove`, `taskprim_deps`,
+    `taskprim_dependents`, `taskprim_frontier`)
+  - Cycle detection via recursive CTE prevents circular dependencies
+  - `waiting_on` (external/human blockers) and `task_deps` (structural) coexist
+  - Frontier query: open tasks with all dependencies resolved or no dependencies
 - **all prims**: `version` subcommand and `--version` / `-v` flag print the
   binary version (e.g. `taskprim v0.4.2`). Version is injected at build time
   via ldflags; falls back to the git commit hash from

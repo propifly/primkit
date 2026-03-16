@@ -4,7 +4,7 @@
 
 primkit provides four primitives that agents use directly via CLI or through MCP integration:
 
-- **taskprim** — task management with lifecycle tracking, lists, labels, and per-agent seen-tracking
+- **taskprim** — task management with lifecycle tracking, lists, labels, per-agent seen-tracking, and structural task-to-task dependencies (cycle detection, frontier queries)
 - **stateprim** — key-value state, dedup lookups, and immutable append logs in namespaced storage
 - **knowledgeprim** — knowledge graphs with typed entities, weighted contextualized edges, hybrid search (FTS5 + vector + RRF), and discovery operations
 - **queueprim** — persistent work queues with priority, retries, dead-letter support, and atomic dequeue with visibility timeouts

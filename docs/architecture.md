@@ -102,7 +102,7 @@ Dependencies flow strictly downward. No lateral dependencies between sibling lay
 
 The Store is the central abstraction. Each primitive defines its own interface in `internal/store/store.go`.
 
-### taskprim Store (15 operations)
+### taskprim Store (21 operations)
 
 | Operation | Description |
 |-----------|-------------|
@@ -114,6 +114,12 @@ The Store is the central abstraction. Each primitive defines its own interface i
 | `KillTask` | Mark task as killed with reason |
 | `MarkSeen` | Record that an agent has seen a task |
 | `MarkAllSeen` | Mark all open tasks in a list as seen by an agent |
+| `AddDep` | Add a dependency edge (with cycle detection via recursive CTE) |
+| `RemoveDep` | Remove a dependency edge |
+| `Deps` | List tasks that a given task depends on |
+| `Dependents` | List tasks that depend on a given task (reverse lookup) |
+| `Frontier` | Open tasks with all dependencies resolved or no dependencies |
+| `DepEdges` | Raw dependency edges, optionally filtered by list |
 | `ListLabels` | All labels with count of open tasks per label |
 | `ClearLabel` | Remove a label from all tasks |
 | `ListLists` | All lists with task counts by state |
@@ -222,6 +228,17 @@ Task {
 ```
 
 Tasks start as `open`. Transitions to `done` or `killed` are one-way. There is no restore/reopen.
+
+**Dependency graph:**
+
+```
+DepEdge {
+    TaskID    string  // the task that is blocked
+    DependsOn string  // the task it depends on
+}
+```
+
+Stored in `task_deps` table with composite primary key `(task_id, depends_on)` and a self-reference check (`task_id != depends_on`). Cycle detection is enforced via recursive CTE on `AddDep`. `waiting_on` (freeform text for external/human blockers) and `task_deps` (structural task-to-task edges) coexist — they serve different purposes.
 
 ### stateprim: Record
 

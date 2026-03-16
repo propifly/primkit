@@ -94,3 +94,9 @@ type Stats struct {
 	TotalDone   int `json:"total_done"`
 	TotalKilled int `json:"total_killed"`
 }
+
+// DepEdge represents a single dependency relationship: TaskID depends on DependsOn.
+type DepEdge struct {
+	TaskID    string `json:"task_id"`
+	DependsOn string `json:"depends_on"`
+}

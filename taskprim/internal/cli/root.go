@@ -168,6 +168,9 @@ MCP server (mcp). All share the same SQLite database.`,
 		newServeCmd(),
 		newMCPCmd(),
 		newRestoreCmd(),
+		newDepCmd(),
+		newDepsOfCmd(),
+		newFrontierCmd(),
 	)
 
 	return root
