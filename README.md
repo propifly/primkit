@@ -43,7 +43,7 @@
 
 ### taskprim
 
-Task management for agents and the humans they work with. Tasks have an explicit lifecycle (`open` → `done` | `killed`), belong to lists, carry freeform labels, and support per-agent seen-tracking.
+Task management for agents and the humans they work with. Tasks have an explicit lifecycle (`open` → `done` | `killed`), belong to lists, carry freeform labels, and support per-agent seen-tracking. Structural task-to-task dependencies enable dependency graphs with cycle detection and frontier queries ("what can I work on next?").
 
 ```bash
 # Create a task
@@ -57,6 +57,12 @@ taskprim done t_abc123
 
 # What hasn't agent "johanna" seen yet?
 taskprim list --unseen-by johanna
+
+# Dependencies: B depends on A
+taskprim dep add t_taskB t_taskA
+
+# What's ready to work on? (no unresolved dependencies)
+taskprim frontier --list ops
 ```
 
 ### stateprim
@@ -349,6 +355,12 @@ queueprim serve --port 8093
 | `POST` | `/v1/tasks/{id}/done` | Mark done |
 | `POST` | `/v1/tasks/{id}/kill` | Mark killed |
 | `POST` | `/v1/seen/{agent}` | Mark tasks as seen |
+| `POST` | `/v1/tasks/{id}/deps` | Add a dependency |
+| `DELETE` | `/v1/tasks/{id}/deps/{dep-id}` | Remove a dependency |
+| `GET` | `/v1/tasks/{id}/deps` | List dependencies |
+| `GET` | `/v1/tasks/{id}/dependents` | List reverse dependencies |
+| `GET` | `/v1/frontier` | Tasks ready for execution |
+| `GET` | `/v1/dep-edges` | Raw dependency edges |
 | `POST` | `/v1/labels/{name}/clear` | Remove label from all tasks |
 | `GET` | `/v1/labels` | List labels |
 | `GET` | `/v1/lists` | List all lists |
@@ -507,7 +519,7 @@ Add to your `claude_desktop_config.json`:
 <details>
 <summary><strong>Available MCP tools</strong></summary>
 
-**taskprim** (11 tools): `taskprim_add`, `taskprim_list`, `taskprim_get`, `taskprim_done`, `taskprim_kill`, `taskprim_edit`, `taskprim_seen`, `taskprim_label_clear`, `taskprim_labels`, `taskprim_lists`, `taskprim_stats`
+**taskprim** (16 tools): `taskprim_add`, `taskprim_list`, `taskprim_get`, `taskprim_done`, `taskprim_kill`, `taskprim_edit`, `taskprim_seen`, `taskprim_dep_add`, `taskprim_dep_remove`, `taskprim_deps`, `taskprim_dependents`, `taskprim_frontier`, `taskprim_label_clear`, `taskprim_labels`, `taskprim_lists`, `taskprim_stats`
 
 **stateprim** (10 tools): `stateprim_set`, `stateprim_get`, `stateprim_has`, `stateprim_set_if_new`, `stateprim_append`, `stateprim_delete`, `stateprim_query`, `stateprim_purge`, `stateprim_namespaces`, `stateprim_stats`
 
@@ -575,7 +587,7 @@ primkit/
 │   └── internal/
 │       ├── model/            #   Task, Filter, state machine
 │       ├── store/            #   Store interface + SQLite impl
-│       ├── cli/              #   Cobra commands (16 commands)
+│       ├── cli/              #   Cobra commands (21 commands)
 │       ├── api/              #   HTTP API handler
 │       └── mcpserver/        #   MCP tool registrations
 ├── stateprim/                # State persistence primitive
