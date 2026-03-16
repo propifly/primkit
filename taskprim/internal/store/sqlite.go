@@ -118,31 +118,7 @@ func (s *SQLiteStore) ListTasks(ctx context.Context, filter *model.Filter) ([]*m
 		return nil, fmt.Errorf("querying tasks: %w", err)
 	}
 	defer rows.Close()
-
-	var tasks []*model.Task
-	for rows.Next() {
-		task, err := scanTaskFromRows(rows)
-		if err != nil {
-			return nil, err
-		}
-		tasks = append(tasks, task)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("iterating tasks: %w", err)
-	}
-
-	// Load labels for each task. This is an N+1 query pattern, which is
-	// acceptable for task lists (typically <100 items). If performance becomes
-	// a concern, this can be replaced with a single JOIN query.
-	for _, task := range tasks {
-		labels, err := getLabels(ctx, s.db, task.ID)
-		if err != nil {
-			return nil, err
-		}
-		task.Labels = labels
-	}
-
-	return tasks, nil
+	return scanTasksWithLabels(ctx, s.db, rows)
 }
 
 // buildListQuery constructs a SELECT query with WHERE clauses based on the
@@ -556,6 +532,188 @@ func (s *SQLiteStore) ImportTasks(ctx context.Context, tasks []*model.Task) erro
 	}
 
 	return tx.Commit()
+}
+
+// ---------------------------------------------------------------------------
+// Dependencies
+// ---------------------------------------------------------------------------
+
+func (s *SQLiteStore) AddDep(ctx context.Context, taskID, dependsOnID string) error {
+	if taskID == dependsOnID {
+		return ErrSelfDependency
+	}
+
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("begin tx: %w", err)
+	}
+	defer tx.Rollback()
+
+	// Verify both tasks exist and taskID is open.
+	var taskState string
+	err = tx.QueryRowContext(ctx, "SELECT state FROM tasks WHERE id = ?", taskID).Scan(&taskState)
+	if err == sql.ErrNoRows {
+		return ErrNotFound
+	}
+	if err != nil {
+		return fmt.Errorf("checking task: %w", err)
+	}
+	if taskState != string(model.StateOpen) {
+		return ErrTaskResolved
+	}
+
+	var depExists bool
+	err = tx.QueryRowContext(ctx, "SELECT 1 FROM tasks WHERE id = ?", dependsOnID).Scan(&depExists)
+	if err == sql.ErrNoRows {
+		return ErrNotFound
+	}
+	if err != nil {
+		return fmt.Errorf("checking dependency: %w", err)
+	}
+
+	// Cycle detection: walk transitive deps of dependsOnID; reject if taskID appears.
+	var cycleFound bool
+	err = tx.QueryRowContext(ctx, `
+		WITH RECURSIVE chain(id) AS (
+			SELECT depends_on FROM task_deps WHERE task_id = ?
+			UNION
+			SELECT d.depends_on FROM task_deps d JOIN chain c ON d.task_id = c.id
+		)
+		SELECT 1 FROM chain WHERE id = ? LIMIT 1`, dependsOnID, taskID).Scan(&cycleFound)
+	if err != nil && err != sql.ErrNoRows {
+		return fmt.Errorf("cycle detection: %w", err)
+	}
+	if cycleFound {
+		return ErrCyclicDependency
+	}
+
+	_, err = tx.ExecContext(ctx,
+		"INSERT OR IGNORE INTO task_deps (task_id, depends_on) VALUES (?, ?)",
+		taskID, dependsOnID)
+	if err != nil {
+		return fmt.Errorf("inserting dep: %w", err)
+	}
+
+	return tx.Commit()
+}
+
+func (s *SQLiteStore) RemoveDep(ctx context.Context, taskID, dependsOnID string) error {
+	result, err := s.db.ExecContext(ctx,
+		"DELETE FROM task_deps WHERE task_id = ? AND depends_on = ?",
+		taskID, dependsOnID)
+	if err != nil {
+		return fmt.Errorf("removing dep: %w", err)
+	}
+	affected, _ := result.RowsAffected()
+	if affected == 0 {
+		return ErrDepNotFound
+	}
+	return nil
+}
+
+func (s *SQLiteStore) Deps(ctx context.Context, taskID string) ([]*model.Task, error) {
+	rows, err := s.db.QueryContext(ctx, `
+		SELECT t.id, t.list, t.what, t.source, t.state, t.waiting_on, t.parent_id, t.context,
+		       t.created, t.updated, t.resolved_at, t.resolved_reason
+		FROM tasks t
+		JOIN task_deps d ON d.depends_on = t.id
+		WHERE d.task_id = ?
+		ORDER BY t.created DESC`, taskID)
+	if err != nil {
+		return nil, fmt.Errorf("querying deps: %w", err)
+	}
+	defer rows.Close()
+	return scanTasksWithLabels(ctx, s.db, rows)
+}
+
+func (s *SQLiteStore) Dependents(ctx context.Context, taskID string) ([]*model.Task, error) {
+	rows, err := s.db.QueryContext(ctx, `
+		SELECT t.id, t.list, t.what, t.source, t.state, t.waiting_on, t.parent_id, t.context,
+		       t.created, t.updated, t.resolved_at, t.resolved_reason
+		FROM tasks t
+		JOIN task_deps d ON d.task_id = t.id
+		WHERE d.depends_on = ?
+		ORDER BY t.created DESC`, taskID)
+	if err != nil {
+		return nil, fmt.Errorf("querying dependents: %w", err)
+	}
+	defer rows.Close()
+	return scanTasksWithLabels(ctx, s.db, rows)
+}
+
+func (s *SQLiteStore) Frontier(ctx context.Context, list string) ([]*model.Task, error) {
+	query := `
+		SELECT t.id, t.list, t.what, t.source, t.state, t.waiting_on, t.parent_id, t.context,
+		       t.created, t.updated, t.resolved_at, t.resolved_reason
+		FROM tasks t
+		WHERE t.state = 'open'
+		  AND NOT EXISTS (
+		      SELECT 1 FROM task_deps d
+		      JOIN tasks dep ON dep.id = d.depends_on
+		      WHERE d.task_id = t.id
+		        AND dep.state = 'open'
+		  )`
+	var args []interface{}
+	if list != "" {
+		query += " AND t.list = ?"
+		args = append(args, list)
+	}
+	query += " ORDER BY t.created DESC"
+
+	rows, err := s.db.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("querying frontier: %w", err)
+	}
+	defer rows.Close()
+	return scanTasksWithLabels(ctx, s.db, rows)
+}
+
+func (s *SQLiteStore) DepEdges(ctx context.Context, list string) ([]model.DepEdge, error) {
+	query := "SELECT d.task_id, d.depends_on FROM task_deps d"
+	var args []interface{}
+	if list != "" {
+		query += " JOIN tasks t ON t.id = d.task_id WHERE t.list = ?"
+		args = append(args, list)
+	}
+
+	rows, err := s.db.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("querying dep edges: %w", err)
+	}
+	defer rows.Close()
+
+	var edges []model.DepEdge
+	for rows.Next() {
+		var e model.DepEdge
+		if err := rows.Scan(&e.TaskID, &e.DependsOn); err != nil {
+			return nil, fmt.Errorf("scanning dep edge: %w", err)
+		}
+		edges = append(edges, e)
+	}
+	return edges, rows.Err()
+}
+
+// scanTasksWithLabels reads all tasks from rows and loads their labels.
+func scanTasksWithLabels(ctx context.Context, database *sql.DB, rows *sql.Rows) ([]*model.Task, error) {
+	var tasks []*model.Task
+	for rows.Next() {
+		task, err := scanTaskFromRows(rows)
+		if err != nil {
+			return nil, err
+		}
+		tasks = append(tasks, task)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterating tasks: %w", err)
+	}
+	for _, task := range tasks {
+		labels, err := getLabels(ctx, database, task.ID)
+		if err != nil {
+			return nil, err
+		}
+		task.Labels = labels
+	}
+	return tasks, nil
 }
 
 // ---------------------------------------------------------------------------

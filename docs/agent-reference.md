@@ -68,9 +68,14 @@ Task management with lifecycle tracking. Tasks follow: `open` -> `done` | `kille
 | Command | Synopsis | Flags |
 |---------|----------|-------|
 | `add` | `add <what>` | `--context` — additional context or notes; `--label` (default: `[]`) — labels (repeatable or comma-separated); `--list` (default: `default`) — list to add the task to; `--parent` — parent task ID for subtasks; `--source` (default: `cli`) — who created this task; `--waiting-on` — what this task is blocked on |
+| `dep add` | `dep add <task-id> <depends-on-id>` | — |
+| `dep ls` | `dep ls <task-id>` | — |
+| `dep rm` | `dep rm <task-id> <depends-on-id>` | — |
+| `deps-of` | `deps-of <task-id>` | — |
 | `done` | `done <id> [id...]` | — |
 | `edit` | `edit <id>` | `--add-label` (default: `[]`) — add labels (repeatable); `--context` — update context notes; `--del-label` (default: `[]`) — remove labels (repeatable); `--list` — move to a different list; `--parent` — set or clear parent task ID; `--waiting-on` — set or clear (empty string) waiting_on; `--what` — update the task description |
 | `export` | `export` | `--list` — export only tasks from this list; `--state` — export only tasks in this state |
+| `frontier` | `frontier` | `--list` — filter by list |
 | `get` | `get <id>` | — |
 | `import` | `import` | `--file` — path to JSON file (default: stdin) |
 | `kill` | `kill <id>` | `--reason` — why this task is being dropped (required) |

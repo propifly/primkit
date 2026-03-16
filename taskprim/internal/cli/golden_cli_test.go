@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"context"
 	"strings"
 	"testing"
 
@@ -187,4 +188,107 @@ func TestGolden_Stats(t *testing.T) {
 			assertGolden(t, "stats_"+tt.name, out)
 		})
 	}
+}
+
+// --------------------------------------------------------------------
+// Golden: dep ls
+// --------------------------------------------------------------------
+
+func TestGolden_DepLs(t *testing.T) {
+	tests := []struct {
+		name   string
+		format string
+	}{
+		{name: "table", format: "table"},
+		{name: "json", format: "json"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			s := newTestStore(t)
+			a := seedTask(t, s, "Dependency task", "work", "test")
+			b := seedTask(t, s, "Blocked task", "work", "test")
+			s.AddDep(context.Background(), b.ID, a.ID)
+
+			out, err := execCmd(t, s, "dep", "ls", b.ID, "-f", tt.format)
+			require.NoError(t, err)
+			assertGolden(t, "dep_ls_"+tt.name, out)
+		})
+	}
+}
+
+// --------------------------------------------------------------------
+// Golden: deps-of
+// --------------------------------------------------------------------
+
+func TestGolden_DepsOf(t *testing.T) {
+	s := newTestStore(t)
+	a := seedTask(t, s, "Base task", "work", "test")
+	b := seedTask(t, s, "Dependent task", "work", "test")
+	s.AddDep(context.Background(), b.ID, a.ID)
+
+	out, err := execCmd(t, s, "deps-of", a.ID)
+	require.NoError(t, err)
+	assertGolden(t, "deps_of_table", out)
+}
+
+// --------------------------------------------------------------------
+// Golden: frontier
+// --------------------------------------------------------------------
+
+func TestGolden_Frontier(t *testing.T) {
+	tests := []struct {
+		name   string
+		format string
+		seed   bool
+	}{
+		{name: "empty", format: "table", seed: false},
+		{name: "table", format: "table", seed: true},
+		{name: "json", format: "json", seed: true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			s := newTestStore(t)
+			if tt.seed {
+				a := seedTask(t, s, "Ready task", "work", "test")
+				b := seedTask(t, s, "Blocked task", "work", "test")
+				s.AddDep(context.Background(), b.ID, a.ID)
+			}
+			out, err := execCmd(t, s, "frontier", "-f", tt.format)
+			require.NoError(t, err)
+			assertGolden(t, "frontier_"+tt.name, out)
+		})
+	}
+}
+
+// --------------------------------------------------------------------
+// Golden: dep add
+// --------------------------------------------------------------------
+
+func TestGolden_DepAdd(t *testing.T) {
+	s := newTestStore(t)
+	out, _ := execCmd(t, s, "add", "Task A", "--source", "test", "-f", "quiet")
+	idA := strings.TrimSpace(out)
+	out, _ = execCmd(t, s, "add", "Task B", "--source", "test", "-f", "quiet")
+	idB := strings.TrimSpace(out)
+
+	out, err := execCmd(t, s, "dep", "add", idB, idA)
+	require.NoError(t, err)
+	assertGolden(t, "dep_add_table", out)
+}
+
+// --------------------------------------------------------------------
+// Golden: dep rm
+// --------------------------------------------------------------------
+
+func TestGolden_DepRm(t *testing.T) {
+	s := newTestStore(t)
+	out, _ := execCmd(t, s, "add", "Task A", "--source", "test", "-f", "quiet")
+	idA := strings.TrimSpace(out)
+	out, _ = execCmd(t, s, "add", "Task B", "--source", "test", "-f", "quiet")
+	idB := strings.TrimSpace(out)
+	s.AddDep(context.Background(), idB, idA)
+
+	out, err := execCmd(t, s, "dep", "rm", idB, idA)
+	require.NoError(t, err)
+	assertGolden(t, "dep_rm_table", out)
 }

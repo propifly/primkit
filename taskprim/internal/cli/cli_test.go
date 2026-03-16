@@ -828,6 +828,205 @@ func TestLifecycle_SeenTracking(t *testing.T) {
 	assert.Empty(t, unseen2)
 }
 
+// --------------------------------------------------------------------
+// dep commands
+// --------------------------------------------------------------------
+
+func TestDep_AddAndLs(t *testing.T) {
+	s := newTestStore(t)
+	a := seedTask(t, s, "Task A", "work", "test")
+	b := seedTask(t, s, "Task B", "work", "test")
+
+	out, err := execCmd(t, s, "dep", "add", b.ID, a.ID)
+	require.NoError(t, err)
+	assert.Contains(t, out, "depends on")
+
+	out, err = execCmd(t, s, "dep", "ls", b.ID)
+	require.NoError(t, err)
+	assert.Contains(t, out, "Task A")
+}
+
+func TestDep_Remove(t *testing.T) {
+	s := newTestStore(t)
+	a := seedTask(t, s, "Task A", "work", "test")
+	b := seedTask(t, s, "Task B", "work", "test")
+	s.AddDep(context.Background(), b.ID, a.ID)
+
+	out, err := execCmd(t, s, "dep", "rm", b.ID, a.ID)
+	require.NoError(t, err)
+	assert.Contains(t, out, "no longer depends on")
+}
+
+func TestDep_AddCycle(t *testing.T) {
+	s := newTestStore(t)
+	a := seedTask(t, s, "A", "work", "test")
+	b := seedTask(t, s, "B", "work", "test")
+	s.AddDep(context.Background(), b.ID, a.ID)
+
+	_, err := execCmd(t, s, "dep", "add", a.ID, b.ID)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "cyclic")
+}
+
+func TestDep_LsEmpty(t *testing.T) {
+	s := newTestStore(t)
+	a := seedTask(t, s, "Task A", "work", "test")
+
+	out, err := execCmd(t, s, "dep", "ls", a.ID)
+	require.NoError(t, err)
+	assert.Contains(t, out, "No tasks found")
+}
+
+func TestDep_LsJSON(t *testing.T) {
+	s := newTestStore(t)
+	a := seedTask(t, s, "Task A", "work", "test")
+	b := seedTask(t, s, "Task B", "work", "test")
+	s.AddDep(context.Background(), b.ID, a.ID)
+
+	out, err := execCmd(t, s, "dep", "ls", b.ID, "-f", "json")
+	require.NoError(t, err)
+
+	var tasks []*model.Task
+	require.NoError(t, json.Unmarshal([]byte(out), &tasks))
+	require.Len(t, tasks, 1)
+	assert.Equal(t, a.ID, tasks[0].ID)
+}
+
+// --------------------------------------------------------------------
+// deps-of command
+// --------------------------------------------------------------------
+
+func TestDepsOf(t *testing.T) {
+	s := newTestStore(t)
+	a := seedTask(t, s, "Task A", "work", "test")
+	b := seedTask(t, s, "Task B", "work", "test")
+	c := seedTask(t, s, "Task C", "work", "test")
+	s.AddDep(context.Background(), b.ID, a.ID)
+	s.AddDep(context.Background(), c.ID, a.ID)
+
+	out, err := execCmd(t, s, "deps-of", a.ID)
+	require.NoError(t, err)
+	assert.Contains(t, out, "Task B")
+	assert.Contains(t, out, "Task C")
+}
+
+func TestDepsOf_Empty(t *testing.T) {
+	s := newTestStore(t)
+	a := seedTask(t, s, "Task A", "work", "test")
+
+	out, err := execCmd(t, s, "deps-of", a.ID)
+	require.NoError(t, err)
+	assert.Contains(t, out, "No tasks found")
+}
+
+// --------------------------------------------------------------------
+// frontier command
+// --------------------------------------------------------------------
+
+func TestFrontier_NoDeps(t *testing.T) {
+	s := newTestStore(t)
+	seedTask(t, s, "Task A", "work", "test")
+	seedTask(t, s, "Task B", "work", "test")
+
+	out, err := execCmd(t, s, "frontier")
+	require.NoError(t, err)
+	assert.Contains(t, out, "Task A")
+	assert.Contains(t, out, "Task B")
+}
+
+func TestFrontier_BlockedTask(t *testing.T) {
+	s := newTestStore(t)
+	a := seedTask(t, s, "Task A", "work", "test")
+	b := seedTask(t, s, "Task B", "work", "test")
+	s.AddDep(context.Background(), b.ID, a.ID)
+
+	out, err := execCmd(t, s, "frontier")
+	require.NoError(t, err)
+	assert.Contains(t, out, "Task A")
+	assert.NotContains(t, out, "Task B")
+}
+
+func TestFrontier_FilterByList(t *testing.T) {
+	s := newTestStore(t)
+	seedTask(t, s, "Work task", "work", "test")
+	seedTask(t, s, "Personal task", "personal", "test")
+
+	out, err := execCmd(t, s, "frontier", "--list", "work")
+	require.NoError(t, err)
+	assert.Contains(t, out, "Work task")
+	assert.NotContains(t, out, "Personal task")
+}
+
+func TestFrontier_JSON(t *testing.T) {
+	s := newTestStore(t)
+	seedTask(t, s, "Task A", "work", "test")
+
+	out, err := execCmd(t, s, "frontier", "-f", "json")
+	require.NoError(t, err)
+
+	var tasks []*model.Task
+	require.NoError(t, json.Unmarshal([]byte(out), &tasks))
+	require.Len(t, tasks, 1)
+}
+
+func TestFrontier_Empty(t *testing.T) {
+	s := newTestStore(t)
+
+	out, err := execCmd(t, s, "frontier")
+	require.NoError(t, err)
+	assert.Contains(t, out, "No tasks found")
+}
+
+// --------------------------------------------------------------------
+// Integration: dependency lifecycle
+// --------------------------------------------------------------------
+
+func TestLifecycle_Dependencies(t *testing.T) {
+	s := newTestStore(t)
+
+	// Create A, B, C
+	outA, _ := execCmd(t, s, "add", "Task A", "--list", "work", "-f", "quiet")
+	idA := strings.TrimSpace(outA)
+	outB, _ := execCmd(t, s, "add", "Task B", "--list", "work", "-f", "quiet")
+	idB := strings.TrimSpace(outB)
+	outC, _ := execCmd(t, s, "add", "Task C", "--list", "work", "-f", "quiet")
+	idC := strings.TrimSpace(outC)
+
+	// C depends on A and B
+	_, err := execCmd(t, s, "dep", "add", idC, idA)
+	require.NoError(t, err)
+	_, err = execCmd(t, s, "dep", "add", idC, idB)
+	require.NoError(t, err)
+
+	// Frontier should show A and B but not C
+	frontierOut, err := execCmd(t, s, "frontier", "-f", "json")
+	require.NoError(t, err)
+	var frontier []*model.Task
+	require.NoError(t, json.Unmarshal([]byte(frontierOut), &frontier))
+	assert.Len(t, frontier, 2)
+
+	// Complete A
+	_, err = execCmd(t, s, "done", idA)
+	require.NoError(t, err)
+
+	// Frontier should show B only (C still blocked on B)
+	frontierOut, err = execCmd(t, s, "frontier", "-f", "json")
+	require.NoError(t, err)
+	require.NoError(t, json.Unmarshal([]byte(frontierOut), &frontier))
+	assert.Len(t, frontier, 1)
+	assert.Equal(t, idB, frontier[0].ID)
+
+	// Complete B — C should now be in frontier
+	_, err = execCmd(t, s, "done", idB)
+	require.NoError(t, err)
+
+	frontierOut, err = execCmd(t, s, "frontier", "-f", "json")
+	require.NoError(t, err)
+	require.NoError(t, json.Unmarshal([]byte(frontierOut), &frontier))
+	assert.Len(t, frontier, 1)
+	assert.Equal(t, idC, frontier[0].ID)
+}
+
 // ---------------------------------------------------------------------------
 // Regression tests
 // ---------------------------------------------------------------------------

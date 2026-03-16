@@ -1,0 +1,11 @@
+[
+  {
+    "id": "<ID>",
+    "list": "work",
+    "what": "Ready task",
+    "source": "test",
+    "state": "open",
+    "created": "<TIMESTAMP>",
+    "updated": "<TIMESTAMP>"
+  }
+]

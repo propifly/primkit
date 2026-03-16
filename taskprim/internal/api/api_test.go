@@ -572,3 +572,250 @@ func TestLifecycle_SeenTracking(t *testing.T) {
 	decodeBody(t, rrUnseen2, &unseen2)
 	assert.Empty(t, unseen2)
 }
+
+// --------------------------------------------------------------------
+// POST /v1/tasks/:id/deps — add dependency
+// --------------------------------------------------------------------
+
+func TestAddDep(t *testing.T) {
+	h, s := newTestHandler(t)
+	a := seedTask(t, s, "Task A", "work", "cli")
+	b := seedTask(t, s, "Task B", "work", "cli")
+
+	body := map[string]interface{}{"depends_on": a.ID}
+	rr := doRequest(t, h, "POST", "/v1/tasks/"+b.ID+"/deps", body)
+	assert.Equal(t, http.StatusCreated, rr.Code)
+
+	var resp map[string]string
+	decodeBody(t, rr, &resp)
+	assert.Equal(t, "ok", resp["status"])
+}
+
+func TestAddDep_MissingDependsOn(t *testing.T) {
+	h, s := newTestHandler(t)
+	a := seedTask(t, s, "Task A", "work", "cli")
+
+	body := map[string]interface{}{}
+	rr := doRequest(t, h, "POST", "/v1/tasks/"+a.ID+"/deps", body)
+	assert.Equal(t, http.StatusBadRequest, rr.Code)
+}
+
+func TestAddDep_CyclicDependency(t *testing.T) {
+	h, s := newTestHandler(t)
+	a := seedTask(t, s, "Task A", "work", "cli")
+	b := seedTask(t, s, "Task B", "work", "cli")
+
+	require.NoError(t, s.AddDep(context.Background(), b.ID, a.ID))
+
+	body := map[string]interface{}{"depends_on": b.ID}
+	rr := doRequest(t, h, "POST", "/v1/tasks/"+a.ID+"/deps", body)
+	assert.Equal(t, http.StatusConflict, rr.Code)
+
+	var resp map[string]string
+	decodeBody(t, rr, &resp)
+	assert.Equal(t, "CYCLIC_DEPENDENCY", resp["code"])
+}
+
+func TestAddDep_SelfDependency(t *testing.T) {
+	h, s := newTestHandler(t)
+	a := seedTask(t, s, "Task A", "work", "cli")
+
+	body := map[string]interface{}{"depends_on": a.ID}
+	rr := doRequest(t, h, "POST", "/v1/tasks/"+a.ID+"/deps", body)
+	assert.Equal(t, http.StatusBadRequest, rr.Code)
+
+	var resp map[string]string
+	decodeBody(t, rr, &resp)
+	assert.Equal(t, "SELF_DEPENDENCY", resp["code"])
+}
+
+func TestAddDep_TaskResolved(t *testing.T) {
+	h, s := newTestHandler(t)
+	a := seedTask(t, s, "Task A", "work", "cli")
+	b := seedTask(t, s, "Task B", "work", "cli")
+	s.DoneTask(context.Background(), a.ID)
+
+	body := map[string]interface{}{"depends_on": b.ID}
+	rr := doRequest(t, h, "POST", "/v1/tasks/"+a.ID+"/deps", body)
+	assert.Equal(t, http.StatusConflict, rr.Code)
+
+	var resp map[string]string
+	decodeBody(t, rr, &resp)
+	assert.Equal(t, "TASK_RESOLVED", resp["code"])
+}
+
+func TestAddDep_NotFound(t *testing.T) {
+	h, s := newTestHandler(t)
+	a := seedTask(t, s, "Task A", "work", "cli")
+
+	body := map[string]interface{}{"depends_on": "t_nonexistent"}
+	rr := doRequest(t, h, "POST", "/v1/tasks/"+a.ID+"/deps", body)
+	assert.Equal(t, http.StatusNotFound, rr.Code)
+}
+
+// --------------------------------------------------------------------
+// DELETE /v1/tasks/:id/deps/:dep_id — remove dependency
+// --------------------------------------------------------------------
+
+func TestRemoveDep(t *testing.T) {
+	h, s := newTestHandler(t)
+	a := seedTask(t, s, "Task A", "work", "cli")
+	b := seedTask(t, s, "Task B", "work", "cli")
+	require.NoError(t, s.AddDep(context.Background(), b.ID, a.ID))
+
+	rr := doRequest(t, h, "DELETE", fmt.Sprintf("/v1/tasks/%s/deps/%s", b.ID, a.ID), nil)
+	assert.Equal(t, http.StatusOK, rr.Code)
+}
+
+func TestRemoveDep_NotFound(t *testing.T) {
+	h, _ := newTestHandler(t)
+
+	rr := doRequest(t, h, "DELETE", "/v1/tasks/t_a/deps/t_b", nil)
+	assert.Equal(t, http.StatusNotFound, rr.Code)
+}
+
+// --------------------------------------------------------------------
+// GET /v1/tasks/:id/deps — list dependencies
+// --------------------------------------------------------------------
+
+func TestListDeps(t *testing.T) {
+	h, s := newTestHandler(t)
+	a := seedTask(t, s, "Task A", "work", "cli")
+	b := seedTask(t, s, "Task B", "work", "cli")
+	require.NoError(t, s.AddDep(context.Background(), b.ID, a.ID))
+
+	rr := doRequest(t, h, "GET", "/v1/tasks/"+b.ID+"/deps", nil)
+	assert.Equal(t, http.StatusOK, rr.Code)
+
+	var tasks []*model.Task
+	decodeBody(t, rr, &tasks)
+	require.Len(t, tasks, 1)
+	assert.Equal(t, a.ID, tasks[0].ID)
+}
+
+func TestListDeps_Empty(t *testing.T) {
+	h, s := newTestHandler(t)
+	a := seedTask(t, s, "Task A", "work", "cli")
+
+	rr := doRequest(t, h, "GET", "/v1/tasks/"+a.ID+"/deps", nil)
+	assert.Equal(t, http.StatusOK, rr.Code)
+
+	var tasks []*model.Task
+	decodeBody(t, rr, &tasks)
+	assert.Empty(t, tasks)
+}
+
+// --------------------------------------------------------------------
+// GET /v1/tasks/:id/dependents — list dependents
+// --------------------------------------------------------------------
+
+func TestListDependents(t *testing.T) {
+	h, s := newTestHandler(t)
+	a := seedTask(t, s, "Task A", "work", "cli")
+	b := seedTask(t, s, "Task B", "work", "cli")
+	c := seedTask(t, s, "Task C", "work", "cli")
+	require.NoError(t, s.AddDep(context.Background(), b.ID, a.ID))
+	require.NoError(t, s.AddDep(context.Background(), c.ID, a.ID))
+
+	rr := doRequest(t, h, "GET", "/v1/tasks/"+a.ID+"/dependents", nil)
+	assert.Equal(t, http.StatusOK, rr.Code)
+
+	var tasks []*model.Task
+	decodeBody(t, rr, &tasks)
+	assert.Len(t, tasks, 2)
+}
+
+// --------------------------------------------------------------------
+// GET /v1/frontier — list frontier tasks
+// --------------------------------------------------------------------
+
+func TestFrontier(t *testing.T) {
+	h, s := newTestHandler(t)
+	a := seedTask(t, s, "Task A", "work", "cli")
+	b := seedTask(t, s, "Task B", "work", "cli")
+	require.NoError(t, s.AddDep(context.Background(), b.ID, a.ID))
+
+	rr := doRequest(t, h, "GET", "/v1/frontier", nil)
+	assert.Equal(t, http.StatusOK, rr.Code)
+
+	var tasks []*model.Task
+	decodeBody(t, rr, &tasks)
+	require.Len(t, tasks, 1)
+	assert.Equal(t, a.ID, tasks[0].ID)
+}
+
+func TestFrontier_FilterByList(t *testing.T) {
+	h, s := newTestHandler(t)
+	seedTask(t, s, "Work task", "work", "cli")
+	seedTask(t, s, "Personal task", "personal", "cli")
+
+	rr := doRequest(t, h, "GET", "/v1/frontier?list=work", nil)
+	assert.Equal(t, http.StatusOK, rr.Code)
+
+	var tasks []*model.Task
+	decodeBody(t, rr, &tasks)
+	require.Len(t, tasks, 1)
+	assert.Equal(t, "Work task", tasks[0].What)
+}
+
+// --------------------------------------------------------------------
+// GET /v1/dep-edges — raw edge export
+// --------------------------------------------------------------------
+
+func TestDepEdges(t *testing.T) {
+	h, s := newTestHandler(t)
+	a := seedTask(t, s, "Task A", "work", "cli")
+	b := seedTask(t, s, "Task B", "work", "cli")
+	require.NoError(t, s.AddDep(context.Background(), b.ID, a.ID))
+
+	rr := doRequest(t, h, "GET", "/v1/dep-edges", nil)
+	assert.Equal(t, http.StatusOK, rr.Code)
+
+	var edges []model.DepEdge
+	decodeBody(t, rr, &edges)
+	require.Len(t, edges, 1)
+	assert.Equal(t, b.ID, edges[0].TaskID)
+	assert.Equal(t, a.ID, edges[0].DependsOn)
+}
+
+// --------------------------------------------------------------------
+// Integration: dependency lifecycle via HTTP
+// --------------------------------------------------------------------
+
+func TestLifecycle_Dependencies(t *testing.T) {
+	h, _ := newTestHandler(t)
+
+	// Create tasks.
+	rr1 := doRequest(t, h, "POST", "/v1/tasks", map[string]interface{}{
+		"list": "work", "what": "Task A",
+	})
+	var taskA model.Task
+	decodeBody(t, rr1, &taskA)
+
+	rr2 := doRequest(t, h, "POST", "/v1/tasks", map[string]interface{}{
+		"list": "work", "what": "Task B",
+	})
+	var taskB model.Task
+	decodeBody(t, rr2, &taskB)
+
+	// B depends on A.
+	doRequest(t, h, "POST", "/v1/tasks/"+taskB.ID+"/deps", map[string]interface{}{
+		"depends_on": taskA.ID,
+	})
+
+	// Frontier: only A.
+	rrFrontier := doRequest(t, h, "GET", "/v1/frontier", nil)
+	var frontier []*model.Task
+	decodeBody(t, rrFrontier, &frontier)
+	require.Len(t, frontier, 1)
+	assert.Equal(t, taskA.ID, frontier[0].ID)
+
+	// Complete A — B should now be in frontier.
+	doRequest(t, h, "POST", "/v1/tasks/"+taskA.ID+"/done", nil)
+
+	rrFrontier2 := doRequest(t, h, "GET", "/v1/frontier", nil)
+	var frontier2 []*model.Task
+	decodeBody(t, rrFrontier2, &frontier2)
+	require.Len(t, frontier2, 1)
+	assert.Equal(t, taskB.ID, frontier2[0].ID)
+}
