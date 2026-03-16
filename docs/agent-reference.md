@@ -17,7 +17,7 @@ ARCH=$(uname -m); [[ "$ARCH" == "x86_64" ]] && ARCH="amd64"
 
 # Install all four (or pick the ones you need)
 for bin in taskprim stateprim knowledgeprim queueprim; do
-  VERSION="0.4.1"  # check https://github.com/propifly/primkit/releases for latest
+  VERSION="0.5.0"  # check https://github.com/propifly/primkit/releases for latest
   curl -sL "https://github.com/propifly/primkit/releases/download/v${VERSION}/${bin}_${VERSION}_${OS}_${ARCH}.tar.gz" | tar xz
 done
 sudo mv taskprim stateprim knowledgeprim queueprim /usr/local/bin/
