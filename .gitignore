@@ -52,3 +52,6 @@ dist/
 
 # Open-source release checklist (local tracking)
 .opensource-checklist.md
+
+# Local design docs (not tracked)
+.design/
