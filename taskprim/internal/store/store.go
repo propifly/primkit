@@ -16,6 +16,18 @@ var ErrNotFound = errors.New("task not found")
 // ErrInvalidTransition is returned when a state transition is not allowed.
 var ErrInvalidTransition = errors.New("invalid state transition")
 
+// ErrCyclicDependency is returned when adding a dependency would create a cycle.
+var ErrCyclicDependency = errors.New("cyclic dependency")
+
+// ErrSelfDependency is returned when a task is added as its own dependency.
+var ErrSelfDependency = errors.New("self dependency")
+
+// ErrTaskResolved is returned when adding a dependency to a done or killed task.
+var ErrTaskResolved = errors.New("task is resolved")
+
+// ErrDepNotFound is returned when removing a dependency edge that does not exist.
+var ErrDepNotFound = errors.New("dependency not found")
+
 // Store is the persistence contract for taskprim. All methods accept a context
 // for cancellation and timeout propagation.
 type Store interface {
@@ -72,6 +84,27 @@ type Store interface {
 	// ImportTasks bulk-inserts tasks, preserving their original IDs. Used to
 	// restore from an export. Runs in a single transaction.
 	ImportTasks(ctx context.Context, tasks []*model.Task) error
+
+	// AddDep adds a dependency edge: taskID depends on dependsOnID.
+	// Returns ErrSelfDependency, ErrNotFound, ErrTaskResolved, or ErrCyclicDependency.
+	AddDep(ctx context.Context, taskID, dependsOnID string) error
+
+	// RemoveDep removes a dependency edge. Returns ErrDepNotFound if the edge
+	// does not exist.
+	RemoveDep(ctx context.Context, taskID, dependsOnID string) error
+
+	// Deps returns the tasks that taskID depends on.
+	Deps(ctx context.Context, taskID string) ([]*model.Task, error)
+
+	// Dependents returns the tasks that depend on taskID.
+	Dependents(ctx context.Context, taskID string) ([]*model.Task, error)
+
+	// Frontier returns open tasks with all dependencies resolved (done or killed)
+	// or no dependencies at all. If list is non-empty, only tasks in that list.
+	Frontier(ctx context.Context, list string) ([]*model.Task, error)
+
+	// DepEdges returns all dependency edges, optionally filtered by list.
+	DepEdges(ctx context.Context, list string) ([]model.DepEdge, error)
 
 	// Close releases the database connection.
 	Close() error

@@ -512,6 +512,286 @@ func TestStats_EmptyDB(t *testing.T) {
 // Export / Import
 // ---------------------------------------------------------------------------
 
+// ---------------------------------------------------------------------------
+// Dependencies
+// ---------------------------------------------------------------------------
+
+func TestAddDep(t *testing.T) {
+	s := newTestStore(t)
+	ctx := context.Background()
+
+	a := seedTask(t, s, func(task *model.Task) { task.What = "task A" })
+	b := seedTask(t, s, func(task *model.Task) { task.What = "task B" })
+
+	require.NoError(t, s.AddDep(ctx, b.ID, a.ID))
+
+	deps, err := s.Deps(ctx, b.ID)
+	require.NoError(t, err)
+	require.Len(t, deps, 1)
+	assert.Equal(t, a.ID, deps[0].ID)
+}
+
+func TestAddDep_SelfDependency(t *testing.T) {
+	s := newTestStore(t)
+	ctx := context.Background()
+
+	a := seedTask(t, s)
+	err := s.AddDep(ctx, a.ID, a.ID)
+	assert.ErrorIs(t, err, ErrSelfDependency)
+}
+
+func TestAddDep_CycleDetection(t *testing.T) {
+	s := newTestStore(t)
+	ctx := context.Background()
+
+	a := seedTask(t, s, func(task *model.Task) { task.What = "A" })
+	b := seedTask(t, s, func(task *model.Task) { task.What = "B" })
+	c := seedTask(t, s, func(task *model.Task) { task.What = "C" })
+
+	// A → B → C (A depends on B, B depends on C)
+	require.NoError(t, s.AddDep(ctx, a.ID, b.ID))
+	require.NoError(t, s.AddDep(ctx, b.ID, c.ID))
+
+	// C → A would create a cycle
+	err := s.AddDep(ctx, c.ID, a.ID)
+	assert.ErrorIs(t, err, ErrCyclicDependency)
+}
+
+func TestAddDep_TaskNotFound(t *testing.T) {
+	s := newTestStore(t)
+	ctx := context.Background()
+
+	a := seedTask(t, s)
+
+	err := s.AddDep(ctx, "t_nonexistent", a.ID)
+	assert.ErrorIs(t, err, ErrNotFound)
+
+	err = s.AddDep(ctx, a.ID, "t_nonexistent")
+	assert.ErrorIs(t, err, ErrNotFound)
+}
+
+func TestAddDep_TaskResolved(t *testing.T) {
+	s := newTestStore(t)
+	ctx := context.Background()
+
+	a := seedTask(t, s)
+	b := seedTask(t, s)
+	require.NoError(t, s.DoneTask(ctx, a.ID))
+
+	err := s.AddDep(ctx, a.ID, b.ID)
+	assert.ErrorIs(t, err, ErrTaskResolved)
+}
+
+func TestAddDep_Idempotent(t *testing.T) {
+	s := newTestStore(t)
+	ctx := context.Background()
+
+	a := seedTask(t, s)
+	b := seedTask(t, s)
+
+	require.NoError(t, s.AddDep(ctx, a.ID, b.ID))
+	require.NoError(t, s.AddDep(ctx, a.ID, b.ID)) // Should not error
+
+	deps, err := s.Deps(ctx, a.ID)
+	require.NoError(t, err)
+	assert.Len(t, deps, 1, "duplicate edge should be ignored")
+}
+
+func TestRemoveDep(t *testing.T) {
+	s := newTestStore(t)
+	ctx := context.Background()
+
+	a := seedTask(t, s)
+	b := seedTask(t, s)
+	require.NoError(t, s.AddDep(ctx, a.ID, b.ID))
+
+	require.NoError(t, s.RemoveDep(ctx, a.ID, b.ID))
+
+	deps, err := s.Deps(ctx, a.ID)
+	require.NoError(t, err)
+	assert.Empty(t, deps)
+}
+
+func TestRemoveDep_NotFound(t *testing.T) {
+	s := newTestStore(t)
+	err := s.RemoveDep(context.Background(), "t_a", "t_b")
+	assert.ErrorIs(t, err, ErrDepNotFound)
+}
+
+func TestDeps_Empty(t *testing.T) {
+	s := newTestStore(t)
+	ctx := context.Background()
+
+	a := seedTask(t, s)
+	deps, err := s.Deps(ctx, a.ID)
+	require.NoError(t, err)
+	assert.Empty(t, deps)
+}
+
+func TestDependents(t *testing.T) {
+	s := newTestStore(t)
+	ctx := context.Background()
+
+	a := seedTask(t, s, func(task *model.Task) { task.What = "A" })
+	b := seedTask(t, s, func(task *model.Task) { task.What = "B" })
+	c := seedTask(t, s, func(task *model.Task) { task.What = "C" })
+
+	// B depends on A, C depends on A
+	require.NoError(t, s.AddDep(ctx, b.ID, a.ID))
+	require.NoError(t, s.AddDep(ctx, c.ID, a.ID))
+
+	dependents, err := s.Dependents(ctx, a.ID)
+	require.NoError(t, err)
+	assert.Len(t, dependents, 2)
+}
+
+func TestFrontier_NoDeps(t *testing.T) {
+	s := newTestStore(t)
+	ctx := context.Background()
+
+	seedTask(t, s, func(task *model.Task) { task.What = "A" })
+	seedTask(t, s, func(task *model.Task) { task.What = "B" })
+
+	frontier, err := s.Frontier(ctx, "")
+	require.NoError(t, err)
+	assert.Len(t, frontier, 2, "tasks without deps are always in the frontier")
+}
+
+func TestFrontier_BlockedTask(t *testing.T) {
+	s := newTestStore(t)
+	ctx := context.Background()
+
+	a := seedTask(t, s, func(task *model.Task) { task.What = "A" })
+	b := seedTask(t, s, func(task *model.Task) { task.What = "B" })
+
+	// B depends on A
+	require.NoError(t, s.AddDep(ctx, b.ID, a.ID))
+
+	frontier, err := s.Frontier(ctx, "")
+	require.NoError(t, err)
+	require.Len(t, frontier, 1)
+	assert.Equal(t, a.ID, frontier[0].ID, "only A should be in frontier")
+}
+
+func TestFrontier_ResolvedDep(t *testing.T) {
+	s := newTestStore(t)
+	ctx := context.Background()
+
+	a := seedTask(t, s, func(task *model.Task) { task.What = "A" })
+	b := seedTask(t, s, func(task *model.Task) { task.What = "B" })
+
+	// B depends on A
+	require.NoError(t, s.AddDep(ctx, b.ID, a.ID))
+
+	// Complete A — B should now be in frontier
+	require.NoError(t, s.DoneTask(ctx, a.ID))
+
+	frontier, err := s.Frontier(ctx, "")
+	require.NoError(t, err)
+	require.Len(t, frontier, 1)
+	assert.Equal(t, b.ID, frontier[0].ID, "B should be unblocked now")
+}
+
+func TestFrontier_FilterByList(t *testing.T) {
+	s := newTestStore(t)
+	ctx := context.Background()
+
+	seedTask(t, s, func(task *model.Task) { task.List = "work" })
+	seedTask(t, s, func(task *model.Task) { task.List = "personal" })
+
+	frontier, err := s.Frontier(ctx, "work")
+	require.NoError(t, err)
+	assert.Len(t, frontier, 1)
+	assert.Equal(t, "work", frontier[0].List)
+}
+
+func TestFrontier_MultipleDeps(t *testing.T) {
+	s := newTestStore(t)
+	ctx := context.Background()
+
+	a := seedTask(t, s, func(task *model.Task) { task.What = "A" })
+	b := seedTask(t, s, func(task *model.Task) { task.What = "B" })
+	c := seedTask(t, s, func(task *model.Task) { task.What = "C" })
+
+	// C depends on A and B
+	require.NoError(t, s.AddDep(ctx, c.ID, a.ID))
+	require.NoError(t, s.AddDep(ctx, c.ID, b.ID))
+
+	// Complete A only — C still blocked on B
+	require.NoError(t, s.DoneTask(ctx, a.ID))
+
+	frontier, err := s.Frontier(ctx, "")
+	require.NoError(t, err)
+	// Only B should be in frontier (A is done, C is blocked)
+	require.Len(t, frontier, 1)
+	assert.Equal(t, b.ID, frontier[0].ID)
+
+	// Complete B — C should now be in frontier
+	require.NoError(t, s.DoneTask(ctx, b.ID))
+
+	frontier, err = s.Frontier(ctx, "")
+	require.NoError(t, err)
+	require.Len(t, frontier, 1)
+	assert.Equal(t, c.ID, frontier[0].ID)
+}
+
+func TestDepEdges(t *testing.T) {
+	s := newTestStore(t)
+	ctx := context.Background()
+
+	a := seedTask(t, s, func(task *model.Task) { task.What = "A" })
+	b := seedTask(t, s, func(task *model.Task) { task.What = "B" })
+	c := seedTask(t, s, func(task *model.Task) { task.What = "C" })
+
+	require.NoError(t, s.AddDep(ctx, b.ID, a.ID))
+	require.NoError(t, s.AddDep(ctx, c.ID, a.ID))
+
+	edges, err := s.DepEdges(ctx, "")
+	require.NoError(t, err)
+	assert.Len(t, edges, 2)
+}
+
+func TestDepEdges_FilterByList(t *testing.T) {
+	s := newTestStore(t)
+	ctx := context.Background()
+
+	a := seedTask(t, s, func(task *model.Task) { task.List = "work"; task.What = "A" })
+	b := seedTask(t, s, func(task *model.Task) { task.List = "work"; task.What = "B" })
+	c := seedTask(t, s, func(task *model.Task) { task.List = "personal"; task.What = "C" })
+
+	require.NoError(t, s.AddDep(ctx, b.ID, a.ID))
+	require.NoError(t, s.AddDep(ctx, c.ID, a.ID))
+
+	edges, err := s.DepEdges(ctx, "work")
+	require.NoError(t, err)
+	assert.Len(t, edges, 1, "only the work-list edge")
+}
+
+func TestDep_CascadeDelete(t *testing.T) {
+	s := newTestStore(t)
+	ctx := context.Background()
+
+	a := seedTask(t, s, func(task *model.Task) { task.What = "A" })
+	b := seedTask(t, s, func(task *model.Task) { task.What = "B" })
+	require.NoError(t, s.AddDep(ctx, b.ID, a.ID))
+
+	// Kill A — edge should be removed by CASCADE
+	require.NoError(t, s.KillTask(ctx, a.ID, "testing cascade"))
+
+	// Manually check the edge is gone (tasks table DELETE CASCADE handles it
+	// but task is still in DB in killed state, so edge stays). Actually,
+	// CASCADE only fires on DELETE, not UPDATE. Let's verify edges remain.
+	edges, err := s.DepEdges(ctx, "")
+	require.NoError(t, err)
+	assert.Len(t, edges, 1, "edge remains because task is killed, not deleted")
+
+	// But B should now be in frontier because A is no longer open
+	frontier, err := s.Frontier(ctx, "")
+	require.NoError(t, err)
+	require.Len(t, frontier, 1)
+	assert.Equal(t, b.ID, frontier[0].ID)
+}
+
 func TestExportImport_RoundTrip(t *testing.T) {
 	s := newTestStore(t)
 	ctx := context.Background()
