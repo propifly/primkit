@@ -698,7 +698,9 @@ func TestImport_FromFile(t *testing.T) {
 	s := newTestStore(t)
 
 	// First export some tasks.
-	seedTask(t, s, "Importable", "work", "cli", "tag")
+	a := seedTask(t, s, "Task A", "work", "cli", "tag")
+	b := seedTask(t, s, "Task B", "work", "cli")
+	require.NoError(t, s.AddDep(context.Background(), b.ID, a.ID))
 
 	exportOut, err := execCmd(t, s, "export")
 	require.NoError(t, err)
@@ -711,7 +713,13 @@ func TestImport_FromFile(t *testing.T) {
 	s2 := newTestStore(t)
 	out, err := execCmd(t, s2, "import", "--file", tmpFile)
 	require.NoError(t, err)
-	assert.Contains(t, out, "Imported 1 task(s)")
+	assert.Contains(t, out, "Imported 2 task(s)")
+
+	edges, err := s2.DepEdges(context.Background(), "")
+	require.NoError(t, err)
+	require.Len(t, edges, 1)
+	assert.Equal(t, b.ID, edges[0].TaskID)
+	assert.Equal(t, a.ID, edges[0].DependsOn)
 }
 
 func TestImport_MissingFile(t *testing.T) {

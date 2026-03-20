@@ -758,6 +758,27 @@ func TestFrontier_FilterByList(t *testing.T) {
 	assert.Equal(t, "Work task", tasks[0].What)
 }
 
+func TestFrontier_ExcludesWaitingOn(t *testing.T) {
+	h, s := newTestHandler(t)
+
+	waitingOn := "vendor response"
+	require.NoError(t, s.CreateTask(context.Background(), &model.Task{
+		What:      "Blocked task",
+		List:      "work",
+		Source:    "cli",
+		WaitingOn: &waitingOn,
+	}))
+	ready := seedTask(t, s, "Ready task", "work", "cli")
+
+	rr := doRequest(t, h, "GET", "/v1/frontier", nil)
+	assert.Equal(t, http.StatusOK, rr.Code)
+
+	var tasks []*model.Task
+	decodeBody(t, rr, &tasks)
+	require.Len(t, tasks, 1)
+	assert.Equal(t, ready.ID, tasks[0].ID)
+}
+
 // --------------------------------------------------------------------
 // GET /v1/dep-edges — raw edge export
 // --------------------------------------------------------------------
