@@ -504,17 +504,29 @@ func (s *SQLiteStore) Stats(ctx context.Context) (*model.Stats, error) {
 // ---------------------------------------------------------------------------
 
 func (s *SQLiteStore) ExportTasks(ctx context.Context, filter *model.Filter) ([]*model.Task, error) {
-	return s.ListTasks(ctx, filter)
+	tasks, err := s.ListTasks(ctx, filter)
+	if err != nil {
+		return nil, err
+	}
+	if err := populateDependsOnIDs(ctx, s.db, tasks); err != nil {
+		return nil, err
+	}
+	return tasks, nil
 }
 
 func (s *SQLiteStore) ImportTasks(ctx context.Context, tasks []*model.Task) error {
+	orderedTasks, err := sortTasksForImport(tasks)
+	if err != nil {
+		return fmt.Errorf("sorting imported tasks: %w", err)
+	}
+
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("begin tx: %w", err)
 	}
 	defer tx.Rollback()
 
-	for _, task := range tasks {
+	for _, task := range orderedTasks {
 		_, err = tx.ExecContext(ctx, `
 			INSERT INTO tasks (id, list, what, source, state, waiting_on, parent_id, context, created, updated, resolved_at, resolved_reason)
 			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -528,6 +540,12 @@ func (s *SQLiteStore) ImportTasks(ctx context.Context, tasks []*model.Task) erro
 
 		if err := insertLabels(ctx, tx, task.ID, task.Labels); err != nil {
 			return fmt.Errorf("importing labels for %s: %w", task.ID, err)
+		}
+	}
+
+	for _, task := range tasks {
+		if err := insertTaskDeps(ctx, tx, task.ID, task.DependsOnIDs); err != nil {
+			return fmt.Errorf("importing deps for %s: %w", task.ID, err)
 		}
 	}
 
@@ -643,15 +661,16 @@ func (s *SQLiteStore) Dependents(ctx context.Context, taskID string) ([]*model.T
 
 func (s *SQLiteStore) Frontier(ctx context.Context, list string) ([]*model.Task, error) {
 	query := `
-		SELECT t.id, t.list, t.what, t.source, t.state, t.waiting_on, t.parent_id, t.context,
-		       t.created, t.updated, t.resolved_at, t.resolved_reason
-		FROM tasks t
-		WHERE t.state = 'open'
-		  AND NOT EXISTS (
-		      SELECT 1 FROM task_deps d
-		      JOIN tasks dep ON dep.id = d.depends_on
-		      WHERE d.task_id = t.id
-		        AND dep.state = 'open'
+			SELECT t.id, t.list, t.what, t.source, t.state, t.waiting_on, t.parent_id, t.context,
+			       t.created, t.updated, t.resolved_at, t.resolved_reason
+			FROM tasks t
+			WHERE t.state = 'open'
+			  AND t.waiting_on IS NULL
+			  AND NOT EXISTS (
+			      SELECT 1 FROM task_deps d
+			      JOIN tasks dep ON dep.id = d.depends_on
+			      WHERE d.task_id = t.id
+			        AND dep.state = 'open'
 		  )`
 	var args []interface{}
 	if list != "" {
@@ -716,9 +735,84 @@ func scanTasksWithLabels(ctx context.Context, database *sql.DB, rows *sql.Rows) 
 	return tasks, nil
 }
 
+func populateDependsOnIDs(ctx context.Context, database *sql.DB, tasks []*model.Task) error {
+	for _, task := range tasks {
+		dependsOnIDs, err := getDependsOnIDs(ctx, database, task.ID)
+		if err != nil {
+			return err
+		}
+		task.DependsOnIDs = dependsOnIDs
+	}
+	return nil
+}
+
+func getDependsOnIDs(ctx context.Context, database *sql.DB, taskID string) ([]string, error) {
+	rows, err := database.QueryContext(ctx,
+		"SELECT depends_on FROM task_deps WHERE task_id = ? ORDER BY depends_on", taskID)
+	if err != nil {
+		return nil, fmt.Errorf("querying dependency ids: %w", err)
+	}
+	defer rows.Close()
+
+	var dependsOnIDs []string
+	for rows.Next() {
+		var dependsOnID string
+		if err := rows.Scan(&dependsOnID); err != nil {
+			return nil, fmt.Errorf("scanning dependency id: %w", err)
+		}
+		dependsOnIDs = append(dependsOnIDs, dependsOnID)
+	}
+	return dependsOnIDs, rows.Err()
+}
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
+
+func sortTasksForImport(tasks []*model.Task) ([]*model.Task, error) {
+	taskByID := make(map[string]*model.Task, len(tasks))
+	for _, task := range tasks {
+		if _, exists := taskByID[task.ID]; exists {
+			return nil, fmt.Errorf("duplicate task id %s", task.ID)
+		}
+		taskByID[task.ID] = task
+	}
+
+	ordered := make([]*model.Task, 0, len(tasks))
+	visiting := make(map[string]bool, len(tasks))
+	visited := make(map[string]bool, len(tasks))
+
+	var visit func(task *model.Task) error
+	visit = func(task *model.Task) error {
+		if visited[task.ID] {
+			return nil
+		}
+		if visiting[task.ID] {
+			return fmt.Errorf("parent cycle detected at %s", task.ID)
+		}
+
+		visiting[task.ID] = true
+		if task.ParentID != nil && *task.ParentID != "" {
+			if parent, ok := taskByID[*task.ParentID]; ok {
+				if err := visit(parent); err != nil {
+					return err
+				}
+			}
+		}
+		visiting[task.ID] = false
+		visited[task.ID] = true
+		ordered = append(ordered, task)
+		return nil
+	}
+
+	for _, task := range tasks {
+		if err := visit(task); err != nil {
+			return nil, err
+		}
+	}
+
+	return ordered, nil
+}
 
 // insertLabels adds label rows for a task within an existing transaction.
 // Duplicates are silently ignored (INSERT OR IGNORE).
@@ -730,6 +824,19 @@ func insertLabels(ctx context.Context, tx *sql.Tx, taskID string, labels []strin
 		)
 		if err != nil {
 			return fmt.Errorf("inserting label %q: %w", label, err)
+		}
+	}
+	return nil
+}
+
+func insertTaskDeps(ctx context.Context, tx *sql.Tx, taskID string, dependsOnIDs []string) error {
+	for _, dependsOnID := range dependsOnIDs {
+		_, err := tx.ExecContext(ctx,
+			"INSERT OR IGNORE INTO task_deps (task_id, depends_on) VALUES (?, ?)",
+			taskID, dependsOnID,
+		)
+		if err != nil {
+			return fmt.Errorf("inserting dependency %q: %w", dependsOnID, err)
 		}
 	}
 	return nil

@@ -18,6 +18,7 @@ type Task struct {
 	ParentID       *string    `json:"parent_id,omitempty"`
 	Context        *string    `json:"context,omitempty"`
 	Labels         []string   `json:"labels,omitempty"`
+	DependsOnIDs   []string   `json:"depends_on_ids,omitempty"`
 	Created        time.Time  `json:"created"`
 	Updated        time.Time  `json:"updated"`
 	ResolvedAt     *time.Time `json:"resolved_at,omitempty"`

@@ -735,6 +735,23 @@ func TestFrontier_MultipleDeps(t *testing.T) {
 	assert.Equal(t, c.ID, frontier[0].ID)
 }
 
+func TestFrontier_ExcludesWaitingOn(t *testing.T) {
+	s := newTestStore(t)
+	ctx := context.Background()
+
+	waitingOn := "vendor response"
+	seedTask(t, s, func(task *model.Task) {
+		task.What = "blocked externally"
+		task.WaitingOn = &waitingOn
+	})
+	ready := seedTask(t, s, func(task *model.Task) { task.What = "ready now" })
+
+	frontier, err := s.Frontier(ctx, "")
+	require.NoError(t, err)
+	require.Len(t, frontier, 1)
+	assert.Equal(t, ready.ID, frontier[0].ID)
+}
+
 func TestDepEdges(t *testing.T) {
 	s := newTestStore(t)
 	ctx := context.Background()
@@ -814,4 +831,73 @@ func TestExportImport_RoundTrip(t *testing.T) {
 	require.Len(t, tasks, 1)
 	assert.Equal(t, "exported task", tasks[0].What)
 	assert.Equal(t, []string{"important"}, tasks[0].Labels)
+}
+
+func TestExportImport_RoundTrip_PreservesDependencies(t *testing.T) {
+	s := newTestStore(t)
+	ctx := context.Background()
+
+	a := seedTask(t, s, func(task *model.Task) { task.What = "task A" })
+	b := seedTask(t, s, func(task *model.Task) { task.What = "task B" })
+	require.NoError(t, s.AddDep(ctx, b.ID, a.ID))
+
+	exported, err := s.ExportTasks(ctx, nil)
+	require.NoError(t, err)
+	require.Len(t, exported, 2)
+
+	var exportedB *model.Task
+	for _, task := range exported {
+		if task.ID == b.ID {
+			exportedB = task
+			break
+		}
+	}
+	require.NotNil(t, exportedB)
+	assert.Equal(t, []string{a.ID}, exportedB.DependsOnIDs)
+
+	s2 := newTestStore(t)
+	require.NoError(t, s2.ImportTasks(ctx, exported))
+
+	edges, err := s2.DepEdges(ctx, "")
+	require.NoError(t, err)
+	require.Len(t, edges, 1)
+	assert.Equal(t, b.ID, edges[0].TaskID)
+	assert.Equal(t, a.ID, edges[0].DependsOn)
+}
+
+func TestExportImport_RoundTrip_WithParentHierarchy(t *testing.T) {
+	s := newTestStore(t)
+	ctx := context.Background()
+
+	parent := seedTask(t, s, func(task *model.Task) { task.What = "parent" })
+	child := seedTask(t, s, func(task *model.Task) {
+		task.What = "child"
+		task.ParentID = &parent.ID
+	})
+
+	parentTime := time.Now().UTC().Add(-2 * time.Minute)
+	childTime := parentTime.Add(time.Minute)
+	_, err := s.db.ExecContext(ctx,
+		"UPDATE tasks SET created = ?, updated = ? WHERE id = ?",
+		parentTime, parentTime, parent.ID,
+	)
+	require.NoError(t, err)
+	_, err = s.db.ExecContext(ctx,
+		"UPDATE tasks SET created = ?, updated = ? WHERE id = ?",
+		childTime, childTime, child.ID,
+	)
+	require.NoError(t, err)
+
+	exported, err := s.ExportTasks(ctx, nil)
+	require.NoError(t, err)
+	require.Len(t, exported, 2)
+	assert.Equal(t, child.ID, exported[0].ID, "export should preserve the default newest-first ordering")
+
+	s2 := newTestStore(t)
+	require.NoError(t, s2.ImportTasks(ctx, exported))
+
+	importedChild, err := s2.GetTask(ctx, child.ID)
+	require.NoError(t, err)
+	require.NotNil(t, importedChild.ParentID)
+	assert.Equal(t, parent.ID, *importedChild.ParentID)
 }
