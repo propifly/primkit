@@ -171,7 +171,7 @@ Download the latest release for your platform. Install only the primitives you n
 
 ```bash
 # Set the version (check https://github.com/propifly/primkit/releases for latest)
-VERSION="0.5.0"
+VERSION="0.5.1"
 
 # macOS (Apple Silicon)
 for bin in taskprim stateprim knowledgeprim queueprim; do

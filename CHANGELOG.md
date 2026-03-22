@@ -4,6 +4,20 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [v0.5.1] - 2026-03-20
+
+### Fixed
+
+- **taskprim**: `frontier` no longer returns tasks with `waiting_on` set. These
+  were being reported as ready for execution even when they were explicitly
+  blocked on an external dependency or person.
+- **taskprim**: `export` / `import` now preserve structural dependency edges.
+  Exported task JSON includes dependency IDs when present, and import restores
+  the `task_deps` graph instead of silently dropping it during backup/restore.
+- **taskprim**: Exported parent/child task hierarchies are now round-trippable.
+  Import orders tasks so parents are inserted before children, avoiding foreign
+  key failures when restoring a normal newest-first export.
+
 ## [v0.5.0] - 2026-03-16
 
 ### Added

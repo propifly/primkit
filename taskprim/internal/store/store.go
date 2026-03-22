@@ -78,11 +78,12 @@ type Store interface {
 	Stats(ctx context.Context) (*model.Stats, error)
 
 	// ExportTasks returns tasks matching the filter in a format suitable for
-	// JSON export. Same as ListTasks but guarantees all fields are populated.
+	// JSON export. Same as ListTasks but guarantees all fields needed for
+	// round-trip restore are populated, including dependency IDs.
 	ExportTasks(ctx context.Context, filter *model.Filter) ([]*model.Task, error)
 
-	// ImportTasks bulk-inserts tasks, preserving their original IDs. Used to
-	// restore from an export. Runs in a single transaction.
+	// ImportTasks bulk-inserts tasks, preserving their original IDs and restoring
+	// exported dependency edges. Runs in a single transaction.
 	ImportTasks(ctx context.Context, tasks []*model.Task) error
 
 	// AddDep adds a dependency edge: taskID depends on dependsOnID.
