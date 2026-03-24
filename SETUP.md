@@ -41,8 +41,8 @@ Both create SQLite databases at `~/.taskprim/default.db` and `~/.stateprim/defau
 
 ```bash
 # queueprim — enqueue and dequeue jobs
-./bin/queueprim enqueue --queue demo --payload '{"task":"hello"}'
-./bin/queueprim dequeue --queue demo --worker local
+./bin/queueprim enqueue demo '{"task":"hello"}'
+./bin/queueprim dequeue demo --worker local
 ```
 
 Creates `~/.queueprim/default.db` on first use.

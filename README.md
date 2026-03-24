@@ -1,24 +1,42 @@
-<p align="center">
-  <img src="docs/assets/logo.png" alt="primkit logo" width="128">
-</p>
+<div align="center">
+  <img src="docs/assets/logo.png" width="128" alt="primkit" />
+  <h1>primkit</h1>
+  <p><strong>Agents without state are just expensive amnesia.<br>
+  primkit gives them tasks, memory, state, and queues — one binary per primitive, no setup, no infrastructure.</strong></p>
 
-<h1 align="center">primkit</h1>
+  [![CI](https://github.com/propifly/primkit/actions/workflows/ci.yml/badge.svg)](https://github.com/propifly/primkit/actions/workflows/ci.yml)
+  [![Release](https://img.shields.io/github/v/release/propifly/primkit)](https://github.com/propifly/primkit/releases/latest)
+  [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+  [![Go 1.26+](https://img.shields.io/badge/go-1.26+-00ADD8.svg)](https://go.dev/dl/)
+</div>
 
-<p align="center">
-  <a href="https://github.com/propifly/primkit/actions/workflows/ci.yml"><img src="https://github.com/propifly/primkit/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
-  <a href="https://github.com/propifly/primkit/releases/latest"><img src="https://img.shields.io/github/v/release/propifly/primkit" alt="Release"></a>
-  <a href="https://goreportcard.com/report/github.com/propifly/primkit/primkit"><img src="https://goreportcard.com/badge/github.com/propifly/primkit/primkit" alt="Go Report Card"></a>
-  <a href="./LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT"></a>
-  <a href="https://go.dev/dl/"><img src="https://img.shields.io/badge/Go-1.26+-00ADD8?logo=go&logoColor=white" alt="Go Version"></a>
-</p>
+<!-- Demo recording: replace this comment block with ![primkit demo](docs/assets/demo.gif) when available -->
 
-<p align="center"><strong>Infrastructure primitives for AI agents — tasks, state, knowledge, and work queues.</strong><br>Single Go binaries with embedded SQLite — no dependencies, no Docker, no database server.</p>
+---
 
-- **CLI-first** — agents with shell access (Claude Code, Codex, Cursor) use the CLI directly. No MCP required.
-- **Three interfaces** — CLI, HTTP API, and MCP (Model Context Protocol) from the same binary
-- **Four primitives** — task management, operational state, knowledge graphs with semantic search, and persistent work queues
-- **Zero config** — database auto-creates on first use. Install the binary, start using it.
-- **SQLite-native** — embedded WAL-mode database with optional cloud replication (S3, R2, B2, GCS)
+## Install
+
+```bash
+VERSION="0.5.1"
+for bin in taskprim stateprim knowledgeprim queueprim; do
+  curl -sSL "https://github.com/propifly/primkit/releases/download/v${VERSION}/${bin}_${VERSION}_$(uname -s)_$(uname -m).tar.gz" | tar xz
+done
+sudo mv taskprim stateprim knowledgeprim queueprim /usr/local/bin/
+```
+
+Verify: `taskprim --help`
+
+> `go install` will be available after the Go module proxy indexes the repo. Check [pkg.go.dev/github.com/propifly/primkit](https://pkg.go.dev/github.com/propifly/primkit) — once it appears, install via `go install github.com/propifly/primkit/...@latest`.
+
+---
+
+## What it does
+
+primkit is four CLI tools that give agents structured, persistent state across sessions. Each primitive is a standalone binary backed by embedded SQLite — no server, no configuration, no runtime dependencies. An agent running in a headless shell, a CI pipeline, or a subagent spawn calls the same commands the same way. State survives session ends, terminal closes, and context window limits.
+
+**This is NOT an MCP server.** primkit ships an MCP interface for IDE-first workflows (Cursor, Claude Desktop), but the product is CLI-native. An agent with shell access uses it like any Unix tool. No IDE required, no host process running, works anywhere bash works.
+
+**Why not files?** Files break under two conditions: two agents writing simultaneously (corruption), and structured queries (`--status=in-progress`). primkit handles both. If your agent does single-session, single-step tasks, files are fine. The transition point is the third time you paste state back into a new session by hand.
 
 > **Setting up an agent?** Point it at the [Agent Reference](docs/agent-reference.md) — structured command tables, JSON schemas, and decision trees for all four primitives.
 
