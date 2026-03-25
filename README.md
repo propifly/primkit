@@ -10,7 +10,7 @@
   [![Go 1.26+](https://img.shields.io/badge/go-1.26+-00ADD8.svg)](https://go.dev/dl/)
 </div>
 
-<!-- Demo recording: replace this comment block with ![primkit demo](docs/assets/demo.gif) when available -->
+![primkit demo](docs/assets/demo.gif)
 
 ---
 
