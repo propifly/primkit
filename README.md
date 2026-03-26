@@ -28,8 +28,6 @@ sudo mv taskprim stateprim knowledgeprim queueprim /usr/local/bin/
 
 Verify: `taskprim --help`
 
-> `go install` will be available after the Go module proxy indexes the repo. Check [pkg.go.dev/github.com/propifly/primkit](https://pkg.go.dev/github.com/propifly/primkit) — once it appears, install via `go install github.com/propifly/primkit/...@latest`.
-
 ---
 
 ## What it does
@@ -226,9 +224,18 @@ Or use `gh`:
 gh release download --latest --repo propifly/primkit --pattern '*darwin_arm64*'
 ```
 
-### From source
+### go install
 
 Requires [Go 1.26+](https://go.dev/dl/):
+
+```bash
+go install github.com/propifly/primkit/taskprim/cmd/taskprim@latest
+go install github.com/propifly/primkit/stateprim/cmd/stateprim@latest
+go install github.com/propifly/primkit/knowledgeprim/cmd/knowledgeprim@latest
+go install github.com/propifly/primkit/queueprim/cmd/queueprim@latest
+```
+
+### From source
 
 ```bash
 git clone https://github.com/propifly/primkit.git
@@ -708,6 +715,7 @@ Tests use **in-memory SQLite** — no disk I/O, no cleanup, fast and isolated.
 - [queueprim Guide](docs/queueprim.md) — visibility timeout, worker loop, priority and queue design, retry and dead-letter strategy
 - [Configuration Reference](docs/configuration.md) — full YAML spec, env var overrides, examples
 - [Architecture](docs/architecture.md) — layered design, store interfaces, data flow, replication
+- [Building Curious Agents](docs/curiosity-architecture.md) — using knowledgeprim's knowledge graph and stateprim to build agents that investigate and learn autonomously across sessions
 - [Setup Guide](SETUP.md) — R2/S3 setup, replication testing, MCP configuration
 - [Contributing](CONTRIBUTING.md) — dev setup, code style, PR process
 - [Security Policy](SECURITY.md) — vulnerability reporting
