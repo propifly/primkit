@@ -28,8 +28,6 @@ sudo mv taskprim stateprim knowledgeprim queueprim /usr/local/bin/
 
 Verify: `taskprim --help`
 
-> `go install` will be available after the Go module proxy indexes the repo. Check [pkg.go.dev/github.com/propifly/primkit](https://pkg.go.dev/github.com/propifly/primkit) — once it appears, install via `go install github.com/propifly/primkit/...@latest`.
-
 ---
 
 ## What it does
@@ -226,9 +224,18 @@ Or use `gh`:
 gh release download --latest --repo propifly/primkit --pattern '*darwin_arm64*'
 ```
 
-### From source
+### go install
 
 Requires [Go 1.26+](https://go.dev/dl/):
+
+```bash
+go install github.com/propifly/primkit/taskprim/cmd/taskprim@latest
+go install github.com/propifly/primkit/stateprim/cmd/stateprim@latest
+go install github.com/propifly/primkit/knowledgeprim/cmd/knowledgeprim@latest
+go install github.com/propifly/primkit/queueprim/cmd/queueprim@latest
+```
+
+### From source
 
 ```bash
 git clone https://github.com/propifly/primkit.git
