@@ -697,17 +697,6 @@ Tests use **in-memory SQLite** — no disk I/O, no cleanup, fast and isolated.
 | **Optional embedding** | knowledgeprim works without vectors (FTS5 search, manual edges, discovery all work) |
 | **Contextualized edges** | Edges store *why* things connect, not just *that* they connect |
 
-## Roadmap
-
-- [x] Shared foundation (config, db, auth, server, mcp scaffold)
-- [x] taskprim (model, store, CLI, HTTP API, MCP)
-- [x] stateprim (model, store, CLI, HTTP API, MCP)
-- [x] knowledgeprim (entities, edges, FTS5 + vector search, discovery, CLI, HTTP API, MCP)
-- [x] queueprim (persistent work queues, priority, retries, dead-letter, CLI, HTTP API, MCP)
-- [x] Litestream replication to object storage (S3, R2, B2, GCS)
-- [x] GitHub Actions CI pipeline
-- [x] Pre-built binaries (GoReleaser)
-
 ## Documentation
 
 - [Agent Reference](docs/agent-reference.md) — structured command tables, JSON schemas, decision trees, error patterns (for agents)
@@ -730,4 +719,3 @@ Copyright (c) 2026 Propifly, Inc.
 ---
 
 If primkit is useful to you, consider giving it a ⭐ — it helps others discover it.
-# test
