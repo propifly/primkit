@@ -2,6 +2,8 @@ module github.com/propifly/primkit/primkit
 
 go 1.26
 
+toolchain go1.26.1
+
 require (
 	github.com/benbjohnson/litestream v0.5.9
 	github.com/stretchr/testify v1.11.1

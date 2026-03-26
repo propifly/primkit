@@ -91,5 +91,7 @@ jobs:
       - uses: actions/setup-go@v6
         with:
           go-version: "1.26"
+      - name: Configure private module access
+        run: git config --global url."https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/".insteadOf "https://github.com/"
       - name: Check docs are up to date
         run: make docs-check
