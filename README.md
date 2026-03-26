@@ -18,8 +18,10 @@
 
 ```bash
 VERSION="0.5.1"
+OS=$(uname -s | tr '[:upper:]' '[:lower:]')
+ARCH=$(uname -m | sed 's/x86_64/amd64/' | sed 's/aarch64/arm64/')
 for bin in taskprim stateprim knowledgeprim queueprim; do
-  curl -sSL "https://github.com/propifly/primkit/releases/download/v${VERSION}/${bin}_${VERSION}_$(uname -s)_$(uname -m).tar.gz" | tar xz
+  curl -sSL "https://github.com/propifly/primkit/releases/download/v${VERSION}/${bin}_${VERSION}_${OS}_${ARCH}.tar.gz" | tar xz
 done
 sudo mv taskprim stateprim knowledgeprim queueprim /usr/local/bin/
 ```
