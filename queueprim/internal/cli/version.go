@@ -30,6 +30,10 @@ func resolveVersion() string {
 		return Version
 	}
 	if info, ok := debug.ReadBuildInfo(); ok {
+		// go install sets Main.Version to the module version.
+		if v := info.Main.Version; v != "" && v != "(devel)" {
+			return v
+		}
 		for _, s := range info.Settings {
 			if s.Key == "vcs.revision" && len(s.Value) >= 7 {
 				return s.Value[:7]
