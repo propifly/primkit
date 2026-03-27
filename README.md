@@ -22,7 +22,8 @@ primkit gives AI agents structured, persistent state that survives session ends,
 Paste this into Claude Code, Cursor, Codex, or any agent with web access:
 
 ```
-Read https://github.com/propifly/primkit/blob/main/docs/agent-reference.md, then tell me whether primkit would help with what we've been doing, and which primitives are relevant.
+Read this doc: https://github.com/propifly/primkit/blob/main/docs/agent-reference.md
+Then tell me if primkit would help with what we've been doing and which primitives are relevant.
 ```
 
 It will map primkit to your actual workflow and give you a straight answer.
