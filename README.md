@@ -1,8 +1,7 @@
 <div align="center">
   <img src="docs/assets/logo.png" width="128" alt="primkit" />
   <h1>primkit</h1>
-  <p><strong>Agents without state are just expensive amnesia.<br>
-  primkit gives them tasks, memory, state, and queues — one binary per primitive, no setup, no infrastructure.</strong></p>
+  <p><strong>Persistent state for AI agents. Four CLI tools, embedded SQLite, zero infrastructure.</strong></p>
 
   [![CI](https://github.com/propifly/primkit/actions/workflows/ci.yml/badge.svg)](https://github.com/propifly/primkit/actions/workflows/ci.yml)
   [![Release](https://img.shields.io/github/v/release/propifly/primkit)](https://github.com/propifly/primkit/releases/latest)
@@ -10,50 +9,63 @@
   [![Go 1.26+](https://img.shields.io/badge/go-1.26+-00ADD8.svg)](https://go.dev/dl/)
 </div>
 
-![primkit demo](docs/assets/demo.gif)
+Each primitive is a standalone binary. No server, no configuration, no runtime dependencies. State survives session ends, terminal closes, and context window limits.
 
----
+- **taskprim**: task lifecycle, dependencies, frontier queries
+- **stateprim**: key-value state, dedup checks, append-only logs
+- **knowledgeprim**: knowledge graph with hybrid search (FTS5 + vectors)
+- **queueprim**: persistent work queues with priority, retries, and dead-letter
 
-## Install
+
+**Not sure if you need this?** Paste this into your agent:
+
+> *Read https://github.com/propifly/primkit/blob/main/docs/agent-reference.md, then tell me whether primkit would help with what we've been doing, and which primitives are relevant.*
+
+It will map primkit to your actual workflow and give you a straight answer.
+
 
 ```bash
-VERSION="0.5.1"
-OS=$(uname -s | tr '[:upper:]' '[:lower:]')
-ARCH=$(uname -m | sed 's/x86_64/amd64/' | sed 's/aarch64/arm64/')
-for bin in taskprim stateprim knowledgeprim queueprim; do
-  curl -sSL "https://github.com/propifly/primkit/releases/download/v${VERSION}/${bin}_${VERSION}_${OS}_${ARCH}.tar.gz" | tar xz
-done
-sudo mv taskprim stateprim knowledgeprim queueprim /usr/local/bin/
+# One command. Database auto-created on first use.
+taskprim add "Deploy v2 to staging" --list ops --label deploy
+taskprim list --list ops --state open
+taskprim done t_abc123
 ```
 
-Verify: `taskprim --help`
+<div align="center">
 
----
+*An agent creates a task, queries open work, and marks it done, all from the shell.*
 
-## What it does
+</div>
+![primkit demo](docs/assets/demo.gif)
 
-primkit is four CLI tools that give agents structured, persistent state across sessions. Each primitive is a standalone binary backed by embedded SQLite — no server, no configuration, no runtime dependencies. An agent running in a headless shell, a CI pipeline, or a subagent spawn calls the same commands the same way. State survives session ends, terminal closes, and context window limits.
 
-**This is NOT an MCP server.** primkit ships an MCP interface for IDE-first workflows (Cursor, Claude Desktop), but the product is CLI-native. An agent with shell access uses it like any Unix tool. No IDE required, no host process running, works anywhere bash works.
+### Install
 
-**Why not files?** Files break under two conditions: two agents writing simultaneously (corruption), and structured queries (`--status=in-progress`). primkit handles both. If your agent does single-session, single-step tasks, files are fine. The transition point is the third time you paste state back into a new session by hand.
+```bash
+go install github.com/propifly/primkit/taskprim/cmd/taskprim@latest
+go install github.com/propifly/primkit/stateprim/cmd/stateprim@latest
+go install github.com/propifly/primkit/knowledgeprim/cmd/knowledgeprim@latest
+go install github.com/propifly/primkit/queueprim/cmd/queueprim@latest
+```
 
-> **Setting up an agent?** Point it at the [Agent Reference](docs/agent-reference.md) — structured command tables, JSON schemas, and decision trees for all four primitives.
+Or download pre-built binaries from [the latest release](https://github.com/propifly/primkit/releases/latest). See [Installation](#installation) for all options.
+
+> **Setting up an agent?** Point it at the [Agent Reference](docs/agent-reference.md) for command tables, JSON schemas, and decision trees for all four primitives.
 
 ---
 
 ## Table of Contents
 
-- [Primitives](#primitives) — taskprim + stateprim + knowledgeprim + queueprim
-- [Installation](#installation) — pre-built binaries or from source
-- [Quick Start](#quick-start) — get running in 30 seconds
-- [Agent Quick Start](#agent-quick-start) — verify the install programmatically
-- [HTTP API](#http-api) — REST endpoints
-- [MCP](#mcp-model-context-protocol) — IDE integration for Claude Desktop, Cursor, etc.
-- [Configuration](#configuration) — YAML, env vars, global flags
-- [Development](#development) — build, test, lint
-- [Design Decisions](#design-decisions) — why we built it this way
-- [Documentation](#documentation) — full reference docs
+- [Primitives](#primitives): taskprim, stateprim, knowledgeprim, queueprim
+- [Installation](#installation): pre-built binaries or from source
+- [Quick Start](#quick-start): get running in 30 seconds
+- [Agent Quick Start](#agent-quick-start): verify the install programmatically
+- [HTTP API](#http-api): REST endpoints
+- [MCP](#mcp-model-context-protocol): IDE integration for Claude Desktop, Cursor, etc.
+- [Configuration](#configuration): YAML, env vars, global flags
+- [Development](#development): build, test, lint
+- [Design Decisions](#design-decisions): why we built it this way
+- [Documentation](#documentation): full reference docs
 
 ---
 
@@ -87,9 +99,9 @@ taskprim frontier --list ops
 
 Operational state persistence. Three access patterns unified under a single namespaced key-value model:
 
-- **Key-value state** — `set` / `get` / `update` for current state
-- **Dedup lookups** — `has` / `set-if-new` for existence checks
-- **Append records** — immutable, timestamped log entries
+- **Key-value state**: `set` / `get` / `update` for current state
+- **Dedup lookups**: `has` / `set-if-new` for existence checks
+- **Append records**: immutable, timestamped log entries
 
 ```bash
 # Store configuration state
@@ -129,7 +141,7 @@ knowledgeprim related e_abc --depth 2 --direction both
 knowledgeprim discover --clusters --bridges
 ```
 
-**[knowledgeprim Guide](docs/knowledgeprim.md)** — entity types, relationship design, edge context patterns, search strategy, discovery workflows, and agent playbooks.
+**[knowledgeprim Guide](docs/knowledgeprim.md)**: entity types, relationship design, edge context patterns, search strategy, discovery workflows, and agent playbooks.
 
 ### queueprim
 
@@ -154,7 +166,7 @@ queueprim queues
 
 Job lifecycle: `pending` → `claimed` → `done` / `failed` / `dead`
 
-**[queueprim Guide](docs/queueprim.md)** — visibility timeout, the worker loop, priority and queue design, retry and dead-letter strategy, monitoring.
+**[queueprim Guide](docs/queueprim.md)**: visibility timeout, the worker loop, priority and queue design, retry and dead-letter strategy, monitoring.
 
 ## Architecture
 
@@ -469,7 +481,7 @@ curl -H "Authorization: Bearer tp_sk_your_key_here" \
 
 ## MCP (Model Context Protocol)
 
-> **When to use MCP vs CLI:** If your agent has shell access (Claude Code, Codex, terminal-based agents), the CLI is the simplest and most reliable option — agents are trained on CLI tools and can pipe, chain, and compose them naturally. MCP is ideal for IDE integrations (Claude Desktop, Cursor, VS Code) where there's no terminal access.
+> **When to use MCP vs CLI:** If your agent has shell access (Claude Code, Codex, terminal-based agents), the CLI is the simplest and most reliable option. Agents are trained on CLI tools and can pipe, chain, and compose them naturally. MCP is ideal for IDE integrations (Claude Desktop, Cursor, VS Code) where there's no terminal access.
 
 All primitives can run as MCP servers for direct AI agent integration:
 
@@ -680,7 +692,7 @@ cd queueprim && go test -v ./...
 cd primkit && go test -v ./...
 ```
 
-Tests use **in-memory SQLite** — no disk I/O, no cleanup, fast and isolated.
+Tests use **in-memory SQLite**: no disk I/O, no cleanup, fast and isolated.
 
 ## Design Decisions
 
@@ -692,30 +704,38 @@ Tests use **in-memory SQLite** — no disk I/O, no cleanup, fast and isolated.
 | **Interface-based store** | CLI, API, and MCP are sibling consumers of the same contract |
 | **In-memory SQLite for tests** | Catches real SQL bugs that mocks would miss |
 | **Cobra for CLI** | De facto Go CLI standard, good completions and help |
-| **CLI-first design** | Agents with shell access prefer CLI over MCP — trained on man pages, composable with pipes |
-| **FTS5 + vectors in SQLite** | No external search engine needed — hybrid retrieval in a single file |
+| **CLI-first design** | Agents with shell access prefer CLI over MCP; trained on man pages, composable with pipes |
+| **FTS5 + vectors in SQLite** | No external search engine needed; hybrid retrieval in a single file |
 | **Optional embedding** | knowledgeprim works without vectors (FTS5 search, manual edges, discovery all work) |
 | **Contextualized edges** | Edges store *why* things connect, not just *that* they connect |
 
+### CLI-first, not MCP-first
+
+primkit ships an MCP interface for IDE-first workflows (Cursor, Claude Desktop), but the product is CLI-native. An agent with shell access uses it like any Unix tool. No IDE required, no host process, works anywhere bash works.
+
+### Why not files?
+
+Files break under two conditions: two agents writing simultaneously (corruption), and structured queries (`--status=in-progress`). primkit handles both. If your agent does single-session, single-step tasks, files are fine. The transition point is the third time you paste state back into a new session by hand.
+
 ## Documentation
 
-- [Agent Reference](docs/agent-reference.md) — structured command tables, JSON schemas, decision trees, error patterns (for agents)
-- [knowledgeprim Guide](docs/knowledgeprim.md) — entity types, relationships, edge context, search strategy, discovery, agent workflows
-- [queueprim Guide](docs/queueprim.md) — visibility timeout, worker loop, priority and queue design, retry and dead-letter strategy
-- [Configuration Reference](docs/configuration.md) — full YAML spec, env var overrides, examples
-- [Architecture](docs/architecture.md) — layered design, store interfaces, data flow, replication
-- [Building Curious Agents](docs/curiosity-architecture.md) — using knowledgeprim's knowledge graph and stateprim to build agents that investigate and learn autonomously across sessions
-- [Setup Guide](SETUP.md) — R2/S3 setup, replication testing, MCP configuration
-- [Contributing](CONTRIBUTING.md) — dev setup, code style, PR process
-- [Security Policy](SECURITY.md) — vulnerability reporting
-- [Changelog](CHANGELOG.md) — release history
+- [Agent Reference](docs/agent-reference.md): structured command tables, JSON schemas, decision trees, error patterns (for agents)
+- [knowledgeprim Guide](docs/knowledgeprim.md): entity types, relationships, edge context, search strategy, discovery, agent workflows
+- [queueprim Guide](docs/queueprim.md): visibility timeout, worker loop, priority and queue design, retry and dead-letter strategy
+- [Configuration Reference](docs/configuration.md): full YAML spec, env var overrides, examples
+- [Architecture](docs/architecture.md): layered design, store interfaces, data flow, replication
+- [Building Curious Agents](docs/curiosity-architecture.md): using knowledgeprim's knowledge graph and stateprim to build agents that investigate and learn autonomously across sessions
+- [Setup Guide](SETUP.md): R2/S3 setup, replication testing, MCP configuration
+- [Contributing](CONTRIBUTING.md): dev setup, code style, PR process
+- [Security Policy](SECURITY.md): vulnerability reporting
+- [Changelog](CHANGELOG.md): release history
 
 ## License
 
-MIT License — see [LICENSE](./LICENSE).
+MIT License. See [LICENSE](./LICENSE).
 
 Copyright (c) 2026 Propifly, Inc.
 
 ---
 
-If primkit is useful to you, consider giving it a ⭐ — it helps others discover it.
+If primkit is useful to you, consider giving it a ⭐. It helps others discover it.
