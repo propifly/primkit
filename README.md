@@ -16,6 +16,7 @@ Each primitive is a standalone binary. No server, no configuration, no runtime d
 - **knowledgeprim**: knowledge graph with hybrid search (FTS5 + vectors)
 - **queueprim**: persistent work queues with priority, retries, and dead-letter
 
+---
 
 **Not sure if you need this?** Paste this into your agent:
 
@@ -23,6 +24,7 @@ Each primitive is a standalone binary. No server, no configuration, no runtime d
 
 It will map primkit to your actual workflow and give you a straight answer.
 
+---
 
 ```bash
 # One command. Database auto-created on first use.
@@ -35,8 +37,9 @@ taskprim done t_abc123
 
 *An agent creates a task, queries open work, and marks it done, all from the shell.*
 
-</div>
 ![primkit demo](docs/assets/demo.gif)
+
+</div>
 
 
 ### Install
