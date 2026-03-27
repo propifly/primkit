@@ -1,7 +1,7 @@
 <div align="center">
   <img src="docs/assets/logo.png" width="128" alt="primkit" />
   <h1>primkit</h1>
-  <p><strong>Persistent state for AI agents. Four CLI tools, embedded SQLite, zero infrastructure.</strong></p>
+  <h2>Persistent state for AI agents. Four CLI tools, embedded SQLite, zero infrastructure.</h2>
 
   [![CI](https://github.com/propifly/primkit/actions/workflows/ci.yml/badge.svg)](https://github.com/propifly/primkit/actions/workflows/ci.yml)
   [![Release](https://img.shields.io/github/v/release/propifly/primkit)](https://github.com/propifly/primkit/releases/latest)
@@ -9,7 +9,7 @@
   [![Go 1.26+](https://img.shields.io/badge/go-1.26+-00ADD8.svg)](https://go.dev/dl/)
 </div>
 
-Each primitive is a standalone binary. No server, no configuration, no runtime dependencies. State survives session ends, terminal closes, and context window limits.
+primkit gives AI agents structured, persistent state that survives session ends, terminal closes, and context window limits. Each primitive is a standalone binary backed by embedded SQLite. No server, no configuration, no runtime dependencies.
 
 - **taskprim**: task lifecycle, dependencies, frontier queries
 - **stateprim**: key-value state, dedup checks, append-only logs
@@ -17,10 +17,13 @@ Each primitive is a standalone binary. No server, no configuration, no runtime d
 - **queueprim**: persistent work queues with priority, retries, and dead-letter
 
 ---
+## Let your agent decide
 
-**Not sure if you need this?** Paste this into your agent:
+Paste this into Claude Code, Cursor, Codex, or any agent with web access:
 
-> *Read https://github.com/propifly/primkit/blob/main/docs/agent-reference.md, then tell me whether primkit would help with what we've been doing, and which primitives are relevant.*
+```
+Read https://github.com/propifly/primkit/blob/main/docs/agent-reference.md, then tell me whether primkit would help with what we've been doing, and which primitives are relevant.
+```
 
 It will map primkit to your actual workflow and give you a straight answer.
 
