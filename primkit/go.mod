@@ -5,10 +5,10 @@ go 1.26
 toolchain go1.26.1
 
 require (
-	github.com/benbjohnson/litestream v0.5.10
+	github.com/benbjohnson/litestream v0.5.11
 	github.com/stretchr/testify v1.11.1
 	gopkg.in/yaml.v3 v3.0.1
-	modernc.org/sqlite v1.47.0
+	modernc.org/sqlite v1.48.2
 )
 
 require (
@@ -43,6 +43,7 @@ require (
 	github.com/hashicorp/golang-lru/v2 v2.0.7 // indirect
 	github.com/jalaali/go-jalaali v0.0.0-20210801064154-80525e88d958 // indirect
 	github.com/kr/text v0.2.0 // indirect
+	github.com/lmittmann/tint v1.1.3 // indirect
 	github.com/magefile/mage v1.14.0 // indirect
 	github.com/markusmobius/go-dateparser v1.2.4 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
