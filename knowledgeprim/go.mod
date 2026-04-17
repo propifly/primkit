@@ -7,7 +7,6 @@ toolchain go1.26.1
 require (
 	github.com/mark3labs/mcp-go v0.46.0
 	github.com/matoous/go-nanoid/v2 v2.1.0
-	github.com/propifly/primkit/primkit v0.0.0-20260326031906-9913af79a75e
 	github.com/spf13/cobra v1.10.2
 	github.com/spf13/pflag v1.0.10
 	github.com/stretchr/testify v1.11.1
@@ -72,5 +71,5 @@ require (
 	modernc.org/libc v1.70.0 // indirect
 	modernc.org/mathutil v1.7.1 // indirect
 	modernc.org/memory v1.11.0 // indirect
-	modernc.org/sqlite v1.47.0 // indirect
+	modernc.org/sqlite v1.48.2 // indirect
 )
