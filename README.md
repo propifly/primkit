@@ -83,7 +83,7 @@ Or download pre-built binaries from [the latest release](https://github.com/prop
 Task management for agents and the humans they work with. Tasks have an explicit lifecycle (`open` → `done` | `killed`), belong to lists, carry freeform labels, and support per-agent seen-tracking. Structural task-to-task dependencies enable dependency graphs with cycle detection and frontier queries ("what can I work on next?").
 
 ```bash
-# Create a task
+# Create a task (source = who created it, typically an agent name)
 taskprim add "Deploy v2 to staging" --list ops --label deploy --source johanna
 
 # List open tasks
@@ -158,7 +158,7 @@ Persistent work queues for multi-agent pipelines. Jobs have priority, retries, a
 # Enqueue a job (auto-creates ~/.queueprim/default.db)
 queueprim enqueue infra/fixes '{"host":"web-01","issue":"disk_full"}'
 
-# Worker atomically claims the next job
+# Worker atomically claims the next job (worker = agent identity)
 queueprim dequeue infra/fixes --worker johanna
 
 # Mark it done with output
