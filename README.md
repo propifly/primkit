@@ -727,6 +727,8 @@ Files break under two conditions: two agents writing simultaneously (corruption)
 ## Documentation
 
 - [Agent Reference](docs/agent-reference.md): structured command tables, JSON schemas, decision trees, error patterns (for agents)
+- [taskprim Guide](docs/taskprim.md): lifecycle, lists and labels, waiting_on vs dependencies, the dependency graph and frontier, multi-agent seen-tracking
+- [stateprim Guide](docs/stateprim.md): the namespace + key model, the three access patterns (key-value, dedup, append-only logs), querying, housekeeping
 - [knowledgeprim Guide](docs/knowledgeprim.md): entity types, relationships, edge context, search strategy, discovery, agent workflows
 - [queueprim Guide](docs/queueprim.md): visibility timeout, worker loop, priority and queue design, retry and dead-letter strategy
 - [Configuration Reference](docs/configuration.md): full YAML spec, env var overrides, examples
