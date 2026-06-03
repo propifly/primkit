@@ -388,7 +388,8 @@ func TestPurge_RemovesOldRecords(t *testing.T) {
 
 	// Manually insert a record with an old timestamp.
 	oldTime := time.Now().UTC().Add(-48 * time.Hour).Format(time.RFC3339Nano)
-	_, err := s.db.ExecContext(ctx,
+	_, err := s.db.ExecContext(
+		ctx,
 		`INSERT INTO records (namespace, key, value, immutable, created_at, updated_at)
 		 VALUES (?, ?, ?, ?, ?, ?)`,
 		"test-ns", "old-key", `{"old":true}`, false, oldTime, oldTime,
@@ -416,7 +417,8 @@ func TestPurge_DayNotation(t *testing.T) {
 
 	// Insert an old record.
 	oldTime := time.Now().UTC().Add(-10 * 24 * time.Hour).Format(time.RFC3339Nano)
-	_, err := s.db.ExecContext(ctx,
+	_, err := s.db.ExecContext(
+		ctx,
 		`INSERT INTO records (namespace, key, value, immutable, created_at, updated_at)
 		 VALUES (?, ?, ?, ?, ?, ?)`,
 		"ns", "old", `{}`, false, oldTime, oldTime,

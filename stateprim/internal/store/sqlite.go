@@ -64,7 +64,8 @@ func (s *SQLiteStore) Set(ctx context.Context, record *model.Record) error {
 	var existing struct {
 		immutable bool
 	}
-	err := s.db.QueryRowContext(ctx,
+	err := s.db.QueryRowContext(
+		ctx,
 		`SELECT immutable FROM records WHERE namespace = ? AND key = ?`,
 		record.Namespace, record.Key,
 	).Scan(&existing.immutable)
@@ -72,7 +73,8 @@ func (s *SQLiteStore) Set(ctx context.Context, record *model.Record) error {
 		return ErrImmutable
 	}
 
-	_, err = s.db.ExecContext(ctx,
+	_, err = s.db.ExecContext(
+		ctx,
 		`INSERT INTO records (namespace, key, value, immutable, created_at, updated_at)
 		 VALUES (?, ?, ?, ?, ?, ?)
 		 ON CONFLICT (namespace, key) DO UPDATE SET
@@ -98,7 +100,8 @@ func (s *SQLiteStore) Set(ctx context.Context, record *model.Record) error {
 // ---------------------------------------------------------------------------
 
 func (s *SQLiteStore) Get(ctx context.Context, namespace, key string) (*model.Record, error) {
-	row := s.db.QueryRowContext(ctx,
+	row := s.db.QueryRowContext(
+		ctx,
 		`SELECT namespace, key, value, immutable, created_at, updated_at
 		 FROM records WHERE namespace = ? AND key = ?`,
 		namespace, key,
@@ -112,7 +115,8 @@ func (s *SQLiteStore) Get(ctx context.Context, namespace, key string) (*model.Re
 
 func (s *SQLiteStore) Has(ctx context.Context, namespace, key string) (bool, error) {
 	var count int
-	err := s.db.QueryRowContext(ctx,
+	err := s.db.QueryRowContext(
+		ctx,
 		`SELECT COUNT(*) FROM records WHERE namespace = ? AND key = ?`,
 		namespace, key,
 	).Scan(&count)
@@ -134,7 +138,8 @@ func (s *SQLiteStore) SetIfNew(ctx context.Context, record *model.Record) error 
 	now := time.Now().UTC()
 	ts := now.Format(time.RFC3339Nano)
 
-	result, err := s.db.ExecContext(ctx,
+	result, err := s.db.ExecContext(
+		ctx,
 		`INSERT OR IGNORE INTO records (namespace, key, value, immutable, created_at, updated_at)
 		 VALUES (?, ?, ?, ?, ?, ?)`,
 		record.Namespace, record.Key, string(record.Value), record.Immutable, ts, ts,
@@ -171,7 +176,8 @@ func (s *SQLiteStore) Append(ctx context.Context, namespace string, value []byte
 	key := generateAppendKey(now)
 	ts := now.Format(time.RFC3339Nano)
 
-	_, err := s.db.ExecContext(ctx,
+	_, err := s.db.ExecContext(
+		ctx,
 		`INSERT INTO records (namespace, key, value, immutable, created_at, updated_at)
 		 VALUES (?, ?, ?, TRUE, ?, ?)`,
 		namespace, key, string(value), ts, ts,
@@ -195,7 +201,8 @@ func (s *SQLiteStore) Append(ctx context.Context, namespace string, value []byte
 // ---------------------------------------------------------------------------
 
 func (s *SQLiteStore) Delete(ctx context.Context, namespace, key string) error {
-	result, err := s.db.ExecContext(ctx,
+	result, err := s.db.ExecContext(
+		ctx,
 		`DELETE FROM records WHERE namespace = ? AND key = ?`,
 		namespace, key,
 	)
@@ -280,7 +287,8 @@ func (s *SQLiteStore) Purge(ctx context.Context, namespace, olderThan string) (i
 	}
 
 	cutoff := time.Now().UTC().Add(-d).Format(time.RFC3339Nano)
-	result, execErr := s.db.ExecContext(ctx,
+	result, execErr := s.db.ExecContext(
+		ctx,
 		`DELETE FROM records WHERE namespace = ? AND updated_at < ?`,
 		namespace, cutoff,
 	)
@@ -326,7 +334,8 @@ func (s *SQLiteStore) ListNamespaces(ctx context.Context) ([]model.NamespaceInfo
 
 func (s *SQLiteStore) Stats(ctx context.Context) (*model.Stats, error) {
 	var stats model.Stats
-	err := s.db.QueryRowContext(ctx,
+	err := s.db.QueryRowContext(
+		ctx,
 		`SELECT COUNT(*), COUNT(DISTINCT namespace) FROM records`,
 	).Scan(&stats.TotalRecords, &stats.TotalNamespaces)
 	if err != nil {
@@ -386,7 +395,8 @@ func (s *SQLiteStore) ImportRecords(ctx context.Context, records []*model.Record
 	defer stmt.Close()
 
 	for _, r := range records {
-		_, err := stmt.ExecContext(ctx,
+		_, err := stmt.ExecContext(
+			ctx,
 			r.Namespace, r.Key, string(r.Value), r.Immutable,
 			r.CreatedAt.Format(time.RFC3339Nano),
 			r.UpdatedAt.Format(time.RFC3339Nano),
@@ -448,7 +458,8 @@ func scanRecordRows(rows *sql.Rows) (*model.Record, error) {
 func generateAppendKey(t time.Time) string {
 	b := make([]byte, 4)
 	_, _ = rand.Read(b)
-	return fmt.Sprintf("a_%s_%s",
+	return fmt.Sprintf(
+		"a_%s_%s",
 		t.Format("20060102T150405"),
 		hex.EncodeToString(b),
 	)

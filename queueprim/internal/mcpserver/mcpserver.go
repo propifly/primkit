@@ -58,7 +58,8 @@ func New(s store.Store, version string) *mcpsvr.MCPServer {
 // ---------------------------------------------------------------------------
 
 func registerEnqueueTool(srv *mcpsvr.MCPServer, s store.Store) {
-	tool := mcp.NewTool("queueprim_enqueue",
+	tool := mcp.NewTool(
+		"queueprim_enqueue",
 		mcp.WithDescription("Enqueue a new job into a named queue."),
 		mcp.WithString("queue", mcp.Required(), mcp.Description("Queue name, e.g. infra/fixes")),
 		mcp.WithString("payload", mcp.Required(), mcp.Description("Arbitrary JSON payload string")),
@@ -113,7 +114,8 @@ func registerEnqueueTool(srv *mcpsvr.MCPServer, s store.Store) {
 // ---------------------------------------------------------------------------
 
 func registerDequeueTool(srv *mcpsvr.MCPServer, s store.Store) {
-	tool := mcp.NewTool("queueprim_dequeue",
+	tool := mcp.NewTool(
+		"queueprim_dequeue",
 		mcp.WithDescription("Atomically claim the next available job in a queue. Returns the claimed job or an empty result if the queue has no available jobs."),
 		mcp.WithString("queue", mcp.Required(), mcp.Description("Queue name to dequeue from")),
 		mcp.WithString("worker", mcp.Description("Worker agent name (for claimed_by tracking)")),
@@ -154,7 +156,8 @@ func registerDequeueTool(srv *mcpsvr.MCPServer, s store.Store) {
 // ---------------------------------------------------------------------------
 
 func registerCompleteTool(srv *mcpsvr.MCPServer, s store.Store) {
-	tool := mcp.NewTool("queueprim_complete",
+	tool := mcp.NewTool(
+		"queueprim_complete",
 		mcp.WithDescription("Mark a claimed job as done."),
 		mcp.WithString("id", mcp.Required(), mcp.Description("Job ID (q_...)")),
 		mcp.WithString("output", mcp.Description("Optional JSON output payload from the worker")),
@@ -191,7 +194,8 @@ func registerCompleteTool(srv *mcpsvr.MCPServer, s store.Store) {
 // ---------------------------------------------------------------------------
 
 func registerFailTool(srv *mcpsvr.MCPServer, s store.Store) {
-	tool := mcp.NewTool("queueprim_fail",
+	tool := mcp.NewTool(
+		"queueprim_fail",
 		mcp.WithDescription("Mark a claimed job as failed. The job retries (if retries remain) or moves to dead."),
 		mcp.WithString("id", mcp.Required(), mcp.Description("Job ID")),
 		mcp.WithString("reason", mcp.Description("Human-readable failure reason")),
@@ -225,7 +229,8 @@ func registerFailTool(srv *mcpsvr.MCPServer, s store.Store) {
 // ---------------------------------------------------------------------------
 
 func registerReleaseTool(srv *mcpsvr.MCPServer, s store.Store) {
-	tool := mcp.NewTool("queueprim_release",
+	tool := mcp.NewTool(
+		"queueprim_release",
 		mcp.WithDescription("Return a claimed job to pending immediately (unclaim)."),
 		mcp.WithString("id", mcp.Required(), mcp.Description("Job ID")),
 	)
@@ -254,7 +259,8 @@ func registerReleaseTool(srv *mcpsvr.MCPServer, s store.Store) {
 // ---------------------------------------------------------------------------
 
 func registerExtendTool(srv *mcpsvr.MCPServer, s store.Store) {
-	tool := mcp.NewTool("queueprim_extend",
+	tool := mcp.NewTool(
+		"queueprim_extend",
 		mcp.WithDescription("Extend a claimed job's visibility timeout to prevent auto-release."),
 		mcp.WithString("id", mcp.Required(), mcp.Description("Job ID")),
 		mcp.WithString("by", mcp.Description("Extension duration, e.g. 30m (default 30m)")),
@@ -291,7 +297,8 @@ func registerExtendTool(srv *mcpsvr.MCPServer, s store.Store) {
 // ---------------------------------------------------------------------------
 
 func registerPeekTool(srv *mcpsvr.MCPServer, s store.Store) {
-	tool := mcp.NewTool("queueprim_peek",
+	tool := mcp.NewTool(
+		"queueprim_peek",
 		mcp.WithDescription("Inspect the next job that would be dequeued, without claiming it."),
 		mcp.WithString("queue", mcp.Required(), mcp.Description("Queue name")),
 	)
@@ -320,7 +327,8 @@ func registerPeekTool(srv *mcpsvr.MCPServer, s store.Store) {
 // ---------------------------------------------------------------------------
 
 func registerListTool(srv *mcpsvr.MCPServer, s store.Store) {
-	tool := mcp.NewTool("queueprim_list",
+	tool := mcp.NewTool(
+		"queueprim_list",
 		mcp.WithDescription("List jobs with optional filters."),
 		mcp.WithString("queue", mcp.Description("Filter to this queue")),
 		mcp.WithString("status", mcp.Description("pending, claimed, done, failed, or dead")),
@@ -366,7 +374,8 @@ func registerListTool(srv *mcpsvr.MCPServer, s store.Store) {
 // ---------------------------------------------------------------------------
 
 func registerGetTool(srv *mcpsvr.MCPServer, s store.Store) {
-	tool := mcp.NewTool("queueprim_get",
+	tool := mcp.NewTool(
+		"queueprim_get",
 		mcp.WithDescription("Get a specific job by ID."),
 		mcp.WithString("id", mcp.Required(), mcp.Description("Job ID (q_...)")),
 	)
@@ -392,7 +401,8 @@ func registerGetTool(srv *mcpsvr.MCPServer, s store.Store) {
 // ---------------------------------------------------------------------------
 
 func registerQueuesTool(srv *mcpsvr.MCPServer, s store.Store) {
-	tool := mcp.NewTool("queueprim_queues",
+	tool := mcp.NewTool(
+		"queueprim_queues",
 		mcp.WithDescription("List all queues with job counts by status."),
 	)
 
@@ -416,7 +426,8 @@ func registerQueuesTool(srv *mcpsvr.MCPServer, s store.Store) {
 // ---------------------------------------------------------------------------
 
 func registerStatsTool(srv *mcpsvr.MCPServer, s store.Store) {
-	tool := mcp.NewTool("queueprim_stats",
+	tool := mcp.NewTool(
+		"queueprim_stats",
 		mcp.WithDescription("Get aggregate job statistics across all queues."),
 	)
 

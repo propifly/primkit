@@ -1,4 +1,4 @@
-# Building Curious Agents with PrimKit: A Knowledge Graph Approach to Self-Improving AI Agents
+# Building Curious Agents
 
 *Based on building Lukas, a strategic advisor agent that investigates, learns, and builds knowledge autonomously across sessions.*
 
@@ -6,7 +6,7 @@
 
 ## TL;DR
 
-Stateless agents start every session from zero. PrimKit's knowledgeprim (knowledge graph) and stateprim (key-value state) give agents persistent memory that survives across sessions — but persistence alone doesn't produce curiosity. Curiosity requires three coordinated layers: **identity** (the agent believes investigation is who it is), **workflow** (dedicated time for exploration, not just reactive processing), and **state** (themes that track open investigations across sessions). The result is a flywheel: exploration deepens themes, observations accumulate into patterns, patterns generate recommendations, and new findings spawn new themes. Human involvement is needed for seeding initial knowledge, validating recommendations before they become actions, and pruning themes that drift from the agent's domain — but not for the investigation itself.
+Stateless agents start every session from zero. primkit's knowledgeprim (knowledge graph) and stateprim (key-value state) give agents persistent memory that survives across sessions — but persistence alone doesn't produce curiosity. Curiosity requires three coordinated layers: **identity** (the agent believes investigation is who it is), **workflow** (dedicated time for exploration, not just reactive processing), and **state** (themes that track open investigations across sessions). The result is a flywheel: exploration deepens themes, observations accumulate into patterns, patterns generate recommendations, and new findings spawn new themes. Human involvement is needed for seeding initial knowledge, validating recommendations before they become actions, and pruning themes that drift from the agent's domain — but not for the investigation itself.
 
 ---
 
@@ -18,9 +18,9 @@ This works for operational tasks (scan email, triage tasks). It fails for strate
 
 The gap isn't intelligence. The model is capable of deep analysis within a single session. The gap is **continuity** — there's no mechanism for carrying an investigation forward, and no incentive to start one.
 
-## What PrimKit Provides
+## What primkit Provides
 
-PrimKit is a suite of SQLite-backed primitives for agent state. Two are relevant here:
+primkit is a suite of SQLite-backed primitives for agent state. Two are relevant here:
 
 **knowledgeprim** — A knowledge graph with typed entities, weighted edges, and hybrid search (FTS5 + vector embeddings). Entities have types (observation, pattern, article, instruction, recommendation), edges have relationships (supports, contradicts, extends, applies_to) with prose context explaining *why* the connection exists. Auto-connect creates `similar_to` edges when new entities are semantically close to existing ones.
 

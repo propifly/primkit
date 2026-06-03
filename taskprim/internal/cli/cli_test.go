@@ -90,7 +90,8 @@ func TestAdd_WithAllFlags(t *testing.T) {
 	// Create a parent task first (foreign key constraint requires it to exist).
 	parent := seedTask(t, s, "Parent task", "ops", "cli")
 
-	out, err := execCmd(t, s, "add", "Deploy service",
+	out, err := execCmd(
+		t, s, "add", "Deploy service",
 		"--list", "ops",
 		"--source", "johanna",
 		"--label", "infra,urgent",

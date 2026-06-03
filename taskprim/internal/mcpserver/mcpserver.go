@@ -65,30 +65,38 @@ func New(s store.Store, version string) *mcpsvr.MCPServer {
 // ---------------------------------------------------------------------------
 
 func registerAddTool(srv *mcpsvr.MCPServer, s store.Store) {
-	tool := mcp.NewTool("taskprim_add",
+	tool := mcp.NewTool(
+		"taskprim_add",
 		mcp.WithDescription("Create a new task. Returns the created task as JSON."),
-		mcp.WithString("what",
+		mcp.WithString(
+			"what",
 			mcp.Required(),
 			mcp.Description("Task description — what needs to be done"),
 		),
-		mcp.WithString("list",
+		mcp.WithString(
+			"list",
 			mcp.Required(),
 			mcp.Description("Which list (actor/queue) this task belongs to"),
 		),
-		mcp.WithString("source",
+		mcp.WithString(
+			"source",
 			mcp.Description("Who created this task (defaults to 'mcp')"),
 		),
-		mcp.WithArray("labels",
+		mcp.WithArray(
+			"labels",
 			mcp.Description("Freeform labels for categorization"),
 			mcp.WithStringItems(),
 		),
-		mcp.WithString("waiting_on",
+		mcp.WithString(
+			"waiting_on",
 			mcp.Description("What this task is blocked on"),
 		),
-		mcp.WithString("parent_id",
+		mcp.WithString(
+			"parent_id",
 			mcp.Description("Parent task ID for subtasks"),
 		),
-		mcp.WithString("context",
+		mcp.WithString(
+			"context",
 			mcp.Description("Additional context or notes"),
 		),
 	)
@@ -128,35 +136,45 @@ func registerAddTool(srv *mcpsvr.MCPServer, s store.Store) {
 }
 
 func registerListTool(srv *mcpsvr.MCPServer, s store.Store) {
-	tool := mcp.NewTool("taskprim_list",
+	tool := mcp.NewTool(
+		"taskprim_list",
 		mcp.WithDescription("List tasks matching filters. Returns a JSON array of tasks."),
-		mcp.WithString("list",
+		mcp.WithString(
+			"list",
 			mcp.Description("Filter by list name"),
 		),
-		mcp.WithString("state",
+		mcp.WithString(
+			"state",
 			mcp.Description("Filter by state"),
 			mcp.Enum("open", "done", "killed"),
 		),
-		mcp.WithArray("labels",
+		mcp.WithArray(
+			"labels",
 			mcp.Description("Filter by labels (AND logic)"),
 			mcp.WithStringItems(),
 		),
-		mcp.WithString("source",
+		mcp.WithString(
+			"source",
 			mcp.Description("Filter by source"),
 		),
-		mcp.WithBoolean("waiting",
+		mcp.WithBoolean(
+			"waiting",
 			mcp.Description("Only tasks with waiting_on set"),
 		),
-		mcp.WithString("unseen_by",
+		mcp.WithString(
+			"unseen_by",
 			mcp.Description("Tasks not seen by this agent"),
 		),
-		mcp.WithString("seen_by",
+		mcp.WithString(
+			"seen_by",
 			mcp.Description("Tasks seen by this agent (use with since)"),
 		),
-		mcp.WithString("since",
+		mcp.WithString(
+			"since",
 			mcp.Description("Time window for seen_by (e.g., 24h, 7d)"),
 		),
-		mcp.WithString("stale",
+		mcp.WithString(
+			"stale",
 			mcp.Description("Tasks not updated within duration (e.g., 7d)"),
 		),
 	)
@@ -205,9 +223,11 @@ func registerListTool(srv *mcpsvr.MCPServer, s store.Store) {
 }
 
 func registerGetTool(srv *mcpsvr.MCPServer, s store.Store) {
-	tool := mcp.NewTool("taskprim_get",
+	tool := mcp.NewTool(
+		"taskprim_get",
 		mcp.WithDescription("Get a single task by ID. Returns the task as JSON."),
-		mcp.WithString("id",
+		mcp.WithString(
+			"id",
 			mcp.Required(),
 			mcp.Description("Task ID (e.g., t_abc123)"),
 		),
@@ -229,9 +249,11 @@ func registerGetTool(srv *mcpsvr.MCPServer, s store.Store) {
 }
 
 func registerDoneTool(srv *mcpsvr.MCPServer, s store.Store) {
-	tool := mcp.NewTool("taskprim_done",
+	tool := mcp.NewTool(
+		"taskprim_done",
 		mcp.WithDescription("Mark a task as done. Returns the updated task."),
-		mcp.WithString("id",
+		mcp.WithString(
+			"id",
 			mcp.Required(),
 			mcp.Description("Task ID to mark as done"),
 		),
@@ -257,13 +279,16 @@ func registerDoneTool(srv *mcpsvr.MCPServer, s store.Store) {
 }
 
 func registerKillTool(srv *mcpsvr.MCPServer, s store.Store) {
-	tool := mcp.NewTool("taskprim_kill",
+	tool := mcp.NewTool(
+		"taskprim_kill",
 		mcp.WithDescription("Mark a task as killed (dropped). Requires a reason explaining why."),
-		mcp.WithString("id",
+		mcp.WithString(
+			"id",
 			mcp.Required(),
 			mcp.Description("Task ID to kill"),
 		),
-		mcp.WithString("reason",
+		mcp.WithString(
+			"reason",
 			mcp.Required(),
 			mcp.Description("Why this task is being dropped"),
 		),
@@ -293,32 +318,41 @@ func registerKillTool(srv *mcpsvr.MCPServer, s store.Store) {
 }
 
 func registerEditTool(srv *mcpsvr.MCPServer, s store.Store) {
-	tool := mcp.NewTool("taskprim_edit",
+	tool := mcp.NewTool(
+		"taskprim_edit",
 		mcp.WithDescription("Update task fields. Only specified fields are changed. Returns the updated task."),
-		mcp.WithString("id",
+		mcp.WithString(
+			"id",
 			mcp.Required(),
 			mcp.Description("Task ID to edit"),
 		),
-		mcp.WithString("what",
+		mcp.WithString(
+			"what",
 			mcp.Description("New task description"),
 		),
-		mcp.WithString("list",
+		mcp.WithString(
+			"list",
 			mcp.Description("Move to a different list"),
 		),
-		mcp.WithString("waiting_on",
+		mcp.WithString(
+			"waiting_on",
 			mcp.Description("Set or clear (empty string) the waiting_on field"),
 		),
-		mcp.WithString("context",
+		mcp.WithString(
+			"context",
 			mcp.Description("Update context notes"),
 		),
-		mcp.WithString("parent_id",
+		mcp.WithString(
+			"parent_id",
 			mcp.Description("Set or clear parent task ID"),
 		),
-		mcp.WithArray("add_labels",
+		mcp.WithArray(
+			"add_labels",
 			mcp.Description("Labels to add"),
 			mcp.WithStringItems(),
 		),
-		mcp.WithArray("del_labels",
+		mcp.WithArray(
+			"del_labels",
 			mcp.Description("Labels to remove"),
 			mcp.WithStringItems(),
 		),
@@ -354,17 +388,21 @@ func registerEditTool(srv *mcpsvr.MCPServer, s store.Store) {
 }
 
 func registerSeenTool(srv *mcpsvr.MCPServer, s store.Store) {
-	tool := mcp.NewTool("taskprim_seen",
+	tool := mcp.NewTool(
+		"taskprim_seen",
 		mcp.WithDescription("Mark tasks as seen by an agent. Provide either task_ids or list."),
-		mcp.WithString("agent",
+		mcp.WithString(
+			"agent",
 			mcp.Required(),
 			mcp.Description("Agent name (e.g., 'johanna')"),
 		),
-		mcp.WithArray("task_ids",
+		mcp.WithArray(
+			"task_ids",
 			mcp.Description("Specific task IDs to mark as seen"),
 			mcp.WithStringItems(),
 		),
-		mcp.WithString("list",
+		mcp.WithString(
+			"list",
 			mcp.Description("Mark all open tasks in this list as seen"),
 		),
 	)
@@ -401,13 +439,16 @@ func registerSeenTool(srv *mcpsvr.MCPServer, s store.Store) {
 }
 
 func registerLabelClearTool(srv *mcpsvr.MCPServer, s store.Store) {
-	tool := mcp.NewTool("taskprim_label_clear",
+	tool := mcp.NewTool(
+		"taskprim_label_clear",
 		mcp.WithDescription("Remove a label from all tasks. Optionally scope to a specific list."),
-		mcp.WithString("label",
+		mcp.WithString(
+			"label",
 			mcp.Required(),
 			mcp.Description("Label to remove"),
 		),
-		mcp.WithString("list",
+		mcp.WithString(
+			"list",
 			mcp.Description("Only clear from tasks in this list"),
 		),
 	)
@@ -431,9 +472,11 @@ func registerLabelClearTool(srv *mcpsvr.MCPServer, s store.Store) {
 }
 
 func registerLabelsTool(srv *mcpsvr.MCPServer, s store.Store) {
-	tool := mcp.NewTool("taskprim_labels",
+	tool := mcp.NewTool(
+		"taskprim_labels",
 		mcp.WithDescription("List all labels with open task counts."),
-		mcp.WithString("list",
+		mcp.WithString(
+			"list",
 			mcp.Description("Only labels from tasks in this list"),
 		),
 	)
@@ -451,7 +494,8 @@ func registerLabelsTool(srv *mcpsvr.MCPServer, s store.Store) {
 }
 
 func registerListsTool(srv *mcpsvr.MCPServer, s store.Store) {
-	tool := mcp.NewTool("taskprim_lists",
+	tool := mcp.NewTool(
+		"taskprim_lists",
 		mcp.WithDescription("List all lists with task counts by state."),
 	)
 
@@ -466,7 +510,8 @@ func registerListsTool(srv *mcpsvr.MCPServer, s store.Store) {
 }
 
 func registerStatsTool(srv *mcpsvr.MCPServer, s store.Store) {
-	tool := mcp.NewTool("taskprim_stats",
+	tool := mcp.NewTool(
+		"taskprim_stats",
 		mcp.WithDescription("Get aggregate task statistics (open, done, killed counts)."),
 	)
 
@@ -481,13 +526,16 @@ func registerStatsTool(srv *mcpsvr.MCPServer, s store.Store) {
 }
 
 func registerDepAddTool(srv *mcpsvr.MCPServer, s store.Store) {
-	tool := mcp.NewTool("taskprim_dep_add",
+	tool := mcp.NewTool(
+		"taskprim_dep_add",
 		mcp.WithDescription("Add a dependency edge between two tasks. task_id depends on depends_on."),
-		mcp.WithString("task_id",
+		mcp.WithString(
+			"task_id",
 			mcp.Required(),
 			mcp.Description("The task that has the dependency"),
 		),
-		mcp.WithString("depends_on",
+		mcp.WithString(
+			"depends_on",
 			mcp.Required(),
 			mcp.Description("The task it depends on"),
 		),
@@ -514,13 +562,16 @@ func registerDepAddTool(srv *mcpsvr.MCPServer, s store.Store) {
 }
 
 func registerDepRemoveTool(srv *mcpsvr.MCPServer, s store.Store) {
-	tool := mcp.NewTool("taskprim_dep_remove",
+	tool := mcp.NewTool(
+		"taskprim_dep_remove",
 		mcp.WithDescription("Remove a dependency edge between two tasks."),
-		mcp.WithString("task_id",
+		mcp.WithString(
+			"task_id",
 			mcp.Required(),
 			mcp.Description("The task that has the dependency"),
 		),
-		mcp.WithString("depends_on",
+		mcp.WithString(
+			"depends_on",
 			mcp.Required(),
 			mcp.Description("The dependency to remove"),
 		),
@@ -547,9 +598,11 @@ func registerDepRemoveTool(srv *mcpsvr.MCPServer, s store.Store) {
 }
 
 func registerDepsTool(srv *mcpsvr.MCPServer, s store.Store) {
-	tool := mcp.NewTool("taskprim_deps",
+	tool := mcp.NewTool(
+		"taskprim_deps",
 		mcp.WithDescription("List what a task depends on. Returns a JSON array of tasks."),
-		mcp.WithString("id",
+		mcp.WithString(
+			"id",
 			mcp.Required(),
 			mcp.Description("Task ID to list dependencies for"),
 		),
@@ -571,9 +624,11 @@ func registerDepsTool(srv *mcpsvr.MCPServer, s store.Store) {
 }
 
 func registerDependentsTool(srv *mcpsvr.MCPServer, s store.Store) {
-	tool := mcp.NewTool("taskprim_dependents",
+	tool := mcp.NewTool(
+		"taskprim_dependents",
 		mcp.WithDescription("List what depends on a task (reverse lookup). Returns a JSON array of tasks."),
-		mcp.WithString("id",
+		mcp.WithString(
+			"id",
 			mcp.Required(),
 			mcp.Description("Task ID to find dependents for"),
 		),
@@ -595,9 +650,11 @@ func registerDependentsTool(srv *mcpsvr.MCPServer, s store.Store) {
 }
 
 func registerFrontierTool(srv *mcpsvr.MCPServer, s store.Store) {
-	tool := mcp.NewTool("taskprim_frontier",
+	tool := mcp.NewTool(
+		"taskprim_frontier",
 		mcp.WithDescription("List tasks ready for execution — open tasks with all deps resolved or no deps."),
-		mcp.WithString("list",
+		mcp.WithString(
+			"list",
 			mcp.Description("Filter by list name"),
 		),
 	)

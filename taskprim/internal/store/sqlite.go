@@ -67,7 +67,8 @@ func (s *SQLiteStore) CreateTask(ctx context.Context, task *model.Task) error {
 	}
 	defer tx.Rollback()
 
-	_, err = tx.ExecContext(ctx, `
+	_, err = tx.ExecContext(
+		ctx, `
 		INSERT INTO tasks (id, list, what, source, state, waiting_on, parent_id, context, created, updated)
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		task.ID, task.List, task.What, task.Source, task.State,
@@ -268,7 +269,8 @@ func (s *SQLiteStore) UpdateTask(ctx context.Context, id string, update *model.T
 		setArgs = append(setArgs, time.Now().UTC())
 		setArgs = append(setArgs, id)
 
-		_, err = tx.ExecContext(ctx,
+		_, err = tx.ExecContext(
+			ctx,
 			"UPDATE tasks SET "+strings.Join(setClauses, ", ")+" WHERE id = ?",
 			setArgs...,
 		)
@@ -340,7 +342,8 @@ func (s *SQLiteStore) resolveTask(ctx context.Context, id string, to model.State
 		resolvedReason = &reason
 	}
 
-	_, err = s.db.ExecContext(ctx, `
+	_, err = s.db.ExecContext(
+		ctx, `
 		UPDATE tasks SET state = ?, resolved_at = ?, resolved_reason = ?, updated = ?
 		WHERE id = ?`,
 		to, now, resolvedReason, now, id,
@@ -369,7 +372,8 @@ func (s *SQLiteStore) MarkSeen(ctx context.Context, agent string, taskIDs []stri
 
 	now := time.Now().UTC()
 	for _, taskID := range taskIDs {
-		_, err := tx.ExecContext(ctx, `
+		_, err := tx.ExecContext(
+			ctx, `
 			INSERT INTO seen (agent, task_id, seen_at) VALUES (?, ?, ?)
 			ON CONFLICT(agent, task_id) DO UPDATE SET seen_at = excluded.seen_at`,
 			agent, taskID, now,
@@ -391,7 +395,8 @@ func (s *SQLiteStore) MarkAllSeen(ctx context.Context, agent, list string) error
 	}
 
 	now := time.Now().UTC()
-	_, err := s.db.ExecContext(ctx, `
+	_, err := s.db.ExecContext(
+		ctx, `
 		INSERT INTO seen (agent, task_id, seen_at)
 		SELECT ?, id, ? FROM tasks WHERE list = ? AND state = 'open'
 		ON CONFLICT(agent, task_id) DO UPDATE SET seen_at = excluded.seen_at`,
@@ -486,7 +491,8 @@ func (s *SQLiteStore) ListLists(ctx context.Context) ([]model.ListInfo, error) {
 
 func (s *SQLiteStore) Stats(ctx context.Context) (*model.Stats, error) {
 	var stats model.Stats
-	err := s.db.QueryRowContext(ctx, `
+	err := s.db.QueryRowContext(
+		ctx, `
 		SELECT
 			COALESCE(SUM(CASE WHEN state = 'open' THEN 1 ELSE 0 END), 0),
 			COALESCE(SUM(CASE WHEN state = 'done' THEN 1 ELSE 0 END), 0),
@@ -527,7 +533,8 @@ func (s *SQLiteStore) ImportTasks(ctx context.Context, tasks []*model.Task) erro
 	defer tx.Rollback()
 
 	for _, task := range orderedTasks {
-		_, err = tx.ExecContext(ctx, `
+		_, err = tx.ExecContext(
+			ctx, `
 			INSERT INTO tasks (id, list, what, source, state, waiting_on, parent_id, context, created, updated, resolved_at, resolved_reason)
 			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 			task.ID, task.List, task.What, task.Source, task.State,
@@ -818,7 +825,8 @@ func sortTasksForImport(tasks []*model.Task) ([]*model.Task, error) {
 // Duplicates are silently ignored (INSERT OR IGNORE).
 func insertLabels(ctx context.Context, tx *sql.Tx, taskID string, labels []string) error {
 	for _, label := range labels {
-		_, err := tx.ExecContext(ctx,
+		_, err := tx.ExecContext(
+			ctx,
 			"INSERT OR IGNORE INTO task_labels (task_id, label) VALUES (?, ?)",
 			taskID, label,
 		)
@@ -831,7 +839,8 @@ func insertLabels(ctx context.Context, tx *sql.Tx, taskID string, labels []strin
 
 func insertTaskDeps(ctx context.Context, tx *sql.Tx, taskID string, dependsOnIDs []string) error {
 	for _, dependsOnID := range dependsOnIDs {
-		_, err := tx.ExecContext(ctx,
+		_, err := tx.ExecContext(
+			ctx,
 			"INSERT OR IGNORE INTO task_deps (task_id, depends_on) VALUES (?, ?)",
 			taskID, dependsOnID,
 		)
