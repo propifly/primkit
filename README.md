@@ -1,7 +1,7 @@
 <div align="center">
   <img src="docs/assets/logo.png" width="128" alt="primkit" />
   <h1>primkit</h1>
-  <h2>Persistent state for AI agents. Four CLI tools, embedded SQLite, zero infrastructure.</h2>
+  <h2>State that survives the session. Four CLIs, four SQLite files, no server to run.</h2>
 
   [![CI](https://github.com/propifly/primkit/actions/workflows/ci.yml/badge.svg)](https://github.com/propifly/primkit/actions/workflows/ci.yml)
   [![Release](https://img.shields.io/github/v/release/propifly/primkit)](https://github.com/propifly/primkit/releases/latest)
@@ -9,12 +9,28 @@
   [![Go 1.26+](https://img.shields.io/badge/go-1.26+-00ADD8.svg)](https://go.dev/dl/)
 </div>
 
-primkit gives AI agents structured, persistent state that survives session ends, terminal closes, and context window limits. Each primitive is a standalone binary backed by embedded SQLite. No server, no configuration, no runtime dependencies.
+Most agents are brilliant within a single turn and amnesiac across them. A new
+session, a fresh context window, a crashed process, a handoff to another agent —
+and the open tasks, the facts, the queue, and the thread of what you were doing
+all vanish. The usual fallbacks rot: pasted history bloats the context window,
+and markdown or JSON files corrupt the moment two agents write at once.
 
-- **taskprim**: task lifecycle, dependencies, frontier queries
+primkit gives agents — and the humans working with them — four small, sharp,
+local tools that persist through all of it. Each is a standalone Go binary backed
+by embedded SQLite:
+
+- **taskprim**: task lifecycle, dependency graphs, and a "what's ready now?" frontier
 - **stateprim**: key-value state, dedup checks, append-only logs
 - **knowledgeprim**: knowledge graph with hybrid search (FTS5 + vectors)
 - **queueprim**: persistent work queues with priority, retries, and dead-letter
+
+No server, no account, no configuration on first use — just the binaries and a
+file on disk. Unlike a hosted memory layer or an always-on MCP server, primkit
+stays local and explicit: your agent stores state when it decides to, with
+commands you can read back in shell history.
+
+**New here?** Start with the [Getting Started guide](docs/getting-started.md) —
+install a binary and write durable state in about a minute.
 
 ---
 ## Let your agent decide
