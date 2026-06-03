@@ -79,7 +79,8 @@ func (s *SQLiteStore) EnqueueJob(ctx context.Context, job *model.Job) error {
 		job.VisibleAfter = now
 	}
 
-	_, err := s.db.ExecContext(ctx, `
+	_, err := s.db.ExecContext(
+		ctx, `
 		INSERT INTO jobs (
 			id, queue, type, priority, priority_rank, payload, status,
 			visible_after, attempt_count, max_retries, created_at, updated_at
@@ -139,7 +140,8 @@ func (s *SQLiteStore) DequeueJob(ctx context.Context, queue, worker, jobType str
 	// Atomically claim the job within the same transaction.
 	now := time.Now().UTC()
 	visibleAfter := now.Add(timeout)
-	_, err = tx.ExecContext(ctx, `
+	_, err = tx.ExecContext(
+		ctx, `
 		UPDATE jobs
 		SET status = 'claimed', claimed_by = ?, claimed_at = ?,
 		    visible_after = ?, attempt_count = attempt_count + 1, updated_at = ?
@@ -181,7 +183,8 @@ func (s *SQLiteStore) CompleteJob(ctx context.Context, id string, output []byte)
 		outputStr = &s
 	}
 
-	_, err = s.db.ExecContext(ctx, `
+	_, err = s.db.ExecContext(
+		ctx, `
 		UPDATE jobs
 		SET status = 'done', completed_at = ?, output = ?, updated_at = ?
 		WHERE id = ?`,
@@ -200,7 +203,8 @@ func (s *SQLiteStore) CompleteJob(ctx context.Context, id string, output []byte)
 func (s *SQLiteStore) FailJob(ctx context.Context, id, reason string, forceDeadLetter bool) error {
 	var currentStatus string
 	var attemptCount, maxRetries int
-	err := s.db.QueryRowContext(ctx,
+	err := s.db.QueryRowContext(
+		ctx,
 		"SELECT status, attempt_count, max_retries FROM jobs WHERE id = ?", id,
 	).Scan(&currentStatus, &attemptCount, &maxRetries)
 	if err == sql.ErrNoRows {
@@ -224,7 +228,8 @@ func (s *SQLiteStore) FailJob(ctx context.Context, id, reason string, forceDeadL
 		nextVisibleAfter = now
 	}
 
-	_, err = s.db.ExecContext(ctx, `
+	_, err = s.db.ExecContext(
+		ctx, `
 		UPDATE jobs
 		SET status = ?, failure_reason = ?, completed_at = ?,
 		    claimed_by = NULL, claimed_at = NULL, visible_after = COALESCE(?, visible_after),
@@ -256,7 +261,8 @@ func (s *SQLiteStore) ReleaseJob(ctx context.Context, id string) error {
 	}
 
 	now := time.Now().UTC()
-	_, err = s.db.ExecContext(ctx, `
+	_, err = s.db.ExecContext(
+		ctx, `
 		UPDATE jobs
 		SET status = 'pending', claimed_by = NULL, claimed_at = NULL,
 		    visible_after = ?, updated_at = ?
@@ -280,7 +286,8 @@ func (s *SQLiteStore) ExtendJob(ctx context.Context, id string, by time.Duration
 
 	var currentStatus string
 	var visibleAfter time.Time
-	err := s.db.QueryRowContext(ctx,
+	err := s.db.QueryRowContext(
+		ctx,
 		"SELECT status, visible_after FROM jobs WHERE id = ?", id,
 	).Scan(&currentStatus, &visibleAfter)
 	if err == sql.ErrNoRows {
@@ -295,7 +302,8 @@ func (s *SQLiteStore) ExtendJob(ctx context.Context, id string, by time.Duration
 
 	newVisible := visibleAfter.Add(by)
 	now := time.Now().UTC()
-	_, err = s.db.ExecContext(ctx,
+	_, err = s.db.ExecContext(
+		ctx,
 		"UPDATE jobs SET visible_after = ?, updated_at = ? WHERE id = ?",
 		newVisible.UTC(), now, id,
 	)
@@ -311,7 +319,8 @@ func (s *SQLiteStore) ExtendJob(ctx context.Context, id string, by time.Duration
 
 func (s *SQLiteStore) PeekJob(ctx context.Context, queue string) (*model.Job, error) {
 	var id string
-	err := s.db.QueryRowContext(ctx, `
+	err := s.db.QueryRowContext(
+		ctx, `
 		SELECT id FROM jobs
 		WHERE queue = ? AND status = 'pending' AND visible_after <= ?
 		ORDER BY priority_rank ASC, created_at ASC LIMIT 1`,
@@ -438,7 +447,8 @@ func (s *SQLiteStore) ListQueues(ctx context.Context) ([]model.QueueInfo, error)
 
 func (s *SQLiteStore) Stats(ctx context.Context) (*model.Stats, error) {
 	var stats model.Stats
-	err := s.db.QueryRowContext(ctx, `
+	err := s.db.QueryRowContext(
+		ctx, `
 		SELECT
 			COALESCE(SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END), 0),
 			COALESCE(SUM(CASE WHEN status = 'claimed' THEN 1 ELSE 0 END), 0),
@@ -504,7 +514,8 @@ func (s *SQLiteStore) ImportJobs(ctx context.Context, jobs []*model.Job) error {
 			s := string(j.Output)
 			outputStr = &s
 		}
-		_, err = tx.ExecContext(ctx, `
+		_, err = tx.ExecContext(
+			ctx, `
 			INSERT INTO jobs (
 				id, queue, type, priority, priority_rank, payload, status,
 				claimed_by, claimed_at, visible_after, completed_at,

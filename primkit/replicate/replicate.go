@@ -81,7 +81,8 @@ func (r *Replicator) RestoreIfNeeded(ctx context.Context, dbPath string) error {
 		return fmt.Errorf("checking database file: %w", err)
 	}
 
-	r.logger.Info("local database not found, attempting restore from replica",
+	r.logger.Info(
+		"local database not found, attempting restore from replica",
 		"path", dbPath,
 		"bucket", r.cfg.Bucket,
 		"remote_path", r.cfg.Path,
@@ -116,7 +117,8 @@ func (r *Replicator) Restore(ctx context.Context, dbPath string) error {
 // The caller should open their sql.DB AFTER calling Start, or at least
 // ensure the database file exists before calling Start.
 func (r *Replicator) Start(dbPath string) error {
-	r.logger.Info("starting litestream replication",
+	r.logger.Info(
+		"starting litestream replication",
 		"path", dbPath,
 		"provider", r.cfg.Provider,
 		"bucket", r.cfg.Bucket,

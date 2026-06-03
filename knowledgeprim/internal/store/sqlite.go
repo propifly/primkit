@@ -78,7 +78,8 @@ func (s *SQLiteStore) CaptureEntity(ctx context.Context, entity *model.Entity, e
 	}
 	defer tx.Rollback()
 
-	_, err = tx.ExecContext(ctx,
+	_, err = tx.ExecContext(
+		ctx,
 		`INSERT INTO entities (id, type, title, body, url, source, properties, created_at, updated_at)
 		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		entity.ID, entity.Type, entity.Title, entity.Body, entity.URL, entity.Source,
@@ -91,7 +92,8 @@ func (s *SQLiteStore) CaptureEntity(ctx context.Context, entity *model.Entity, e
 	// Store embedding if provided.
 	if len(embedding) > 0 {
 		blob := float32sToBytes(embedding)
-		_, err = tx.ExecContext(ctx,
+		_, err = tx.ExecContext(
+			ctx,
 			`INSERT INTO entity_vectors (entity_id, embedding, dimensions)
 			 VALUES (?, ?, ?)`,
 			entity.ID, blob, len(embedding),
@@ -125,7 +127,8 @@ func (s *SQLiteStore) getEntity(ctx context.Context, q querier, id string) (*mod
 	var body, url, props sql.NullString
 	var createdAt, updatedAt string
 
-	err := q.QueryRowContext(ctx,
+	err := q.QueryRowContext(
+		ctx,
 		`SELECT id, type, title, body, url, source, properties, created_at, updated_at
 		 FROM entities WHERE id = ?`, id,
 	).Scan(&e.ID, &e.Type, &e.Title, &body, &url, &e.Source, &props, &createdAt, &updatedAt)
@@ -152,7 +155,8 @@ func (s *SQLiteStore) getEntity(ctx context.Context, q querier, id string) (*mod
 }
 
 func (s *SQLiteStore) getEdgesForEntity(ctx context.Context, q querier, id string) ([]*model.Edge, error) {
-	rows, err := q.QueryContext(ctx,
+	rows, err := q.QueryContext(
+		ctx,
 		`SELECT source_id, target_id, relationship, weight, context, created_at, updated_at
 		 FROM edges WHERE source_id = ? OR target_id = ?
 		 ORDER BY weight DESC, created_at DESC`, id, id,
@@ -259,7 +263,8 @@ func (s *SQLiteStore) CreateEdge(ctx context.Context, edge *model.Edge) error {
 	edge.CreatedAt = now
 	edge.UpdatedAt = now
 
-	_, err := s.db.ExecContext(ctx,
+	_, err := s.db.ExecContext(
+		ctx,
 		`INSERT INTO edges (source_id, target_id, relationship, weight, context, created_at, updated_at)
 		 VALUES (?, ?, ?, ?, ?, ?, ?)`,
 		edge.SourceID, edge.TargetID, edge.Relationship, edge.Weight, edge.Context,
@@ -317,7 +322,8 @@ func (s *SQLiteStore) UpdateEdge(ctx context.Context, source, target, relationsh
 
 func (s *SQLiteStore) StrengthenEdge(ctx context.Context, source, target, relationship string) error {
 	now := time.Now().UTC().Format(time.RFC3339Nano)
-	result, err := s.db.ExecContext(ctx,
+	result, err := s.db.ExecContext(
+		ctx,
 		`UPDATE edges SET weight = weight + 1.0, updated_at = ?
 		 WHERE source_id = ? AND target_id = ? AND relationship = ?`,
 		now, source, target, relationship,
@@ -333,7 +339,8 @@ func (s *SQLiteStore) StrengthenEdge(ctx context.Context, source, target, relati
 }
 
 func (s *SQLiteStore) DeleteEdge(ctx context.Context, source, target, relationship string) error {
-	result, err := s.db.ExecContext(ctx,
+	result, err := s.db.ExecContext(
+		ctx,
 		`DELETE FROM edges WHERE source_id = ? AND target_id = ? AND relationship = ?`,
 		source, target, relationship,
 	)
@@ -1009,7 +1016,8 @@ func (s *SQLiteStore) ImportEntities(ctx context.Context, data *model.ExportData
 			props = &p
 		}
 
-		_, err := tx.ExecContext(ctx,
+		_, err := tx.ExecContext(
+			ctx,
 			`INSERT OR REPLACE INTO entities (id, type, title, body, url, source, properties, created_at, updated_at)
 			 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 			e.ID, e.Type, e.Title, e.Body, e.URL, e.Source, props,
@@ -1021,7 +1029,8 @@ func (s *SQLiteStore) ImportEntities(ctx context.Context, data *model.ExportData
 	}
 
 	for _, edge := range data.Edges {
-		_, err := tx.ExecContext(ctx,
+		_, err := tx.ExecContext(
+			ctx,
 			`INSERT OR REPLACE INTO edges (source_id, target_id, relationship, weight, context, created_at, updated_at)
 			 VALUES (?, ?, ?, ?, ?, ?, ?)`,
 			edge.SourceID, edge.TargetID, edge.Relationship, edge.Weight, edge.Context,
@@ -1043,7 +1052,8 @@ func (s *SQLiteStore) GetEmbeddingMeta(ctx context.Context) (*model.EmbeddingMet
 	var meta model.EmbeddingMeta
 	var createdAt string
 
-	err := s.db.QueryRowContext(ctx,
+	err := s.db.QueryRowContext(
+		ctx,
 		`SELECT provider, model, dimensions, created_at FROM embedding_meta WHERE id = 1`,
 	).Scan(&meta.Provider, &meta.Model, &meta.Dimensions, &createdAt)
 	if err == sql.ErrNoRows {
@@ -1060,7 +1070,8 @@ func (s *SQLiteStore) SetEmbeddingMeta(ctx context.Context, meta *model.Embeddin
 	now := time.Now().UTC()
 	meta.CreatedAt = now
 
-	_, err := s.db.ExecContext(ctx,
+	_, err := s.db.ExecContext(
+		ctx,
 		`INSERT OR REPLACE INTO embedding_meta (id, provider, model, dimensions, created_at)
 		 VALUES (1, ?, ?, ?, ?)`,
 		meta.Provider, meta.Model, meta.Dimensions, now.Format(time.RFC3339Nano),
@@ -1090,7 +1101,8 @@ func (s *SQLiteStore) StripVectors(ctx context.Context) error {
 
 func (s *SQLiteStore) UpdateEntityVector(ctx context.Context, entityID string, embedding []float32) error {
 	blob := float32sToBytes(embedding)
-	_, err := s.db.ExecContext(ctx,
+	_, err := s.db.ExecContext(
+		ctx,
 		`INSERT OR REPLACE INTO entity_vectors (entity_id, embedding, dimensions)
 		 VALUES (?, ?, ?)`,
 		entityID, blob, len(embedding),

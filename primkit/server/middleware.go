@@ -46,7 +46,8 @@ func Logging(logger *slog.Logger) func(http.Handler) http.Handler {
 
 			next.ServeHTTP(sw, r)
 
-			logger.Info("request",
+			logger.Info(
+				"request",
 				"method", r.Method,
 				"path", r.URL.Path,
 				"status", sw.status,
@@ -64,7 +65,8 @@ func Recovery(logger *slog.Logger) func(http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			defer func() {
 				if rec := recover(); rec != nil {
-					logger.Error("panic recovered",
+					logger.Error(
+						"panic recovered",
 						"error", rec,
 						"method", r.Method,
 						"path", r.URL.Path,

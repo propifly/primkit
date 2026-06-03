@@ -91,7 +91,8 @@ func TestEnqueue_Basic(t *testing.T) {
 
 func TestEnqueue_WithFlags(t *testing.T) {
 	s := newTestStore(t)
-	out, err := execCmd(t, s, "enqueue", "infra/fixes", `{"detail":"test"}`,
+	out, err := execCmd(
+		t, s, "enqueue", "infra/fixes", `{"detail":"test"}`,
 		"--type", "ssh_fail",
 		"--priority", "high",
 		"--max-retries", "2",
@@ -520,7 +521,8 @@ func TestLifecycle_EnqueueDequeueComplete(t *testing.T) {
 	s := newTestStore(t)
 
 	// Enqueue a job.
-	out, err := execCmd(t, s, "enqueue", "infra/fixes",
+	out, err := execCmd(
+		t, s, "enqueue", "infra/fixes",
 		`{"agent":"clawson","summary":"SSH down"}`,
 		"--type", "ssh_fail",
 		"--priority", "high",

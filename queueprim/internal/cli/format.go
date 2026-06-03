@@ -134,7 +134,8 @@ func writeJobTable(w io.Writer, jobs []*model.Job) error {
 	tw := tabwriter.NewWriter(w, 0, 0, 2, ' ', 0)
 	fmt.Fprintln(tw, "ID\tQUEUE\tTYPE\tPRIORITY\tSTATUS\tATTEMPTS")
 	for _, j := range jobs {
-		fmt.Fprintf(tw, "%s\t%s\t%s\t%s\t%s\t%d\n",
+		fmt.Fprintf(
+			tw, "%s\t%s\t%s\t%s\t%s\t%d\n",
 			j.ID,
 			truncate(j.Queue, 30),
 			j.Type,

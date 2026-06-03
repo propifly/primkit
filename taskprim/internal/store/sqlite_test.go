@@ -877,12 +877,14 @@ func TestExportImport_RoundTrip_WithParentHierarchy(t *testing.T) {
 
 	parentTime := time.Now().UTC().Add(-2 * time.Minute)
 	childTime := parentTime.Add(time.Minute)
-	_, err := s.db.ExecContext(ctx,
+	_, err := s.db.ExecContext(
+		ctx,
 		"UPDATE tasks SET created = ?, updated = ? WHERE id = ?",
 		parentTime, parentTime, parent.ID,
 	)
 	require.NoError(t, err)
-	_, err = s.db.ExecContext(ctx,
+	_, err = s.db.ExecContext(
+		ctx,
 		"UPDATE tasks SET created = ?, updated = ? WHERE id = ?",
 		childTime, childTime, child.ID,
 	)

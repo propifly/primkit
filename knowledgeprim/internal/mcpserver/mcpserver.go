@@ -46,7 +46,8 @@ func New(s store.Store, embedder embed.Embedder, version string) *mcpsvr.MCPServ
 // ---------------------------------------------------------------------------
 
 func registerCaptureTool(srv *mcpsvr.MCPServer, s store.Store, embedder embed.Embedder) {
-	tool := mcp.NewTool("knowledgeprim_capture",
+	tool := mcp.NewTool(
+		"knowledgeprim_capture",
 		mcp.WithDescription("Capture a knowledge entity. Auto-embeds if configured."),
 		mcp.WithString("type", mcp.Required(), mcp.Description("Entity type (article, thought, concept, pattern, etc.)")),
 		mcp.WithString("title", mcp.Required(), mcp.Description("Entity title")),
@@ -95,7 +96,8 @@ func registerCaptureTool(srv *mcpsvr.MCPServer, s store.Store, embedder embed.Em
 }
 
 func registerSearchTool(srv *mcpsvr.MCPServer, s store.Store, embedder embed.Embedder) {
-	tool := mcp.NewTool("knowledgeprim_search",
+	tool := mcp.NewTool(
+		"knowledgeprim_search",
 		mcp.WithDescription("Search the knowledge graph. Hybrid: FTS5 + vector + RRF."),
 		mcp.WithString("query", mcp.Required(), mcp.Description("Search query")),
 		mcp.WithString("type", mcp.Description("Filter by entity type")),
@@ -146,7 +148,8 @@ func registerSearchTool(srv *mcpsvr.MCPServer, s store.Store, embedder embed.Emb
 }
 
 func registerGetTool(srv *mcpsvr.MCPServer, s store.Store) {
-	tool := mcp.NewTool("knowledgeprim_get",
+	tool := mcp.NewTool(
+		"knowledgeprim_get",
 		mcp.WithDescription("Get a single entity by ID with its edges."),
 		mcp.WithString("id", mcp.Required(), mcp.Description("Entity ID (e.g., e_abc123)")),
 	)
@@ -164,7 +167,8 @@ func registerGetTool(srv *mcpsvr.MCPServer, s store.Store) {
 }
 
 func registerRelatedTool(srv *mcpsvr.MCPServer, s store.Store) {
-	tool := mcp.NewTool("knowledgeprim_related",
+	tool := mcp.NewTool(
+		"knowledgeprim_related",
 		mcp.WithDescription("Graph traversal from an entity."),
 		mcp.WithString("id", mcp.Required(), mcp.Description("Starting entity ID")),
 		mcp.WithNumber("depth", mcp.Description("Traversal depth (default 1)")),
@@ -190,7 +194,8 @@ func registerRelatedTool(srv *mcpsvr.MCPServer, s store.Store) {
 }
 
 func registerConnectTool(srv *mcpsvr.MCPServer, s store.Store) {
-	tool := mcp.NewTool("knowledgeprim_connect",
+	tool := mcp.NewTool(
+		"knowledgeprim_connect",
 		mcp.WithDescription("Create an edge between two entities."),
 		mcp.WithString("source_id", mcp.Required(), mcp.Description("Source entity ID")),
 		mcp.WithString("target_id", mcp.Required(), mcp.Description("Target entity ID")),
@@ -230,7 +235,8 @@ func registerConnectTool(srv *mcpsvr.MCPServer, s store.Store) {
 }
 
 func registerStrengthenTool(srv *mcpsvr.MCPServer, s store.Store) {
-	tool := mcp.NewTool("knowledgeprim_strengthen",
+	tool := mcp.NewTool(
+		"knowledgeprim_strengthen",
 		mcp.WithDescription("Increment an edge's weight."),
 		mcp.WithString("source_id", mcp.Required(), mcp.Description("Source entity ID")),
 		mcp.WithString("target_id", mcp.Required(), mcp.Description("Target entity ID")),
@@ -248,7 +254,8 @@ func registerStrengthenTool(srv *mcpsvr.MCPServer, s store.Store) {
 }
 
 func registerEdgeEditTool(srv *mcpsvr.MCPServer, s store.Store) {
-	tool := mcp.NewTool("knowledgeprim_edge_edit",
+	tool := mcp.NewTool(
+		"knowledgeprim_edge_edit",
 		mcp.WithDescription("Update an edge's context or weight."),
 		mcp.WithString("source_id", mcp.Required(), mcp.Description("Source entity ID")),
 		mcp.WithString("target_id", mcp.Required(), mcp.Description("Target entity ID")),
@@ -275,7 +282,8 @@ func registerEdgeEditTool(srv *mcpsvr.MCPServer, s store.Store) {
 }
 
 func registerDisconnectTool(srv *mcpsvr.MCPServer, s store.Store) {
-	tool := mcp.NewTool("knowledgeprim_disconnect",
+	tool := mcp.NewTool(
+		"knowledgeprim_disconnect",
 		mcp.WithDescription("Remove an edge between two entities."),
 		mcp.WithString("source_id", mcp.Required(), mcp.Description("Source entity ID")),
 		mcp.WithString("target_id", mcp.Required(), mcp.Description("Target entity ID")),
@@ -293,7 +301,8 @@ func registerDisconnectTool(srv *mcpsvr.MCPServer, s store.Store) {
 }
 
 func registerEditTool(srv *mcpsvr.MCPServer, s store.Store) {
-	tool := mcp.NewTool("knowledgeprim_edit",
+	tool := mcp.NewTool(
+		"knowledgeprim_edit",
 		mcp.WithDescription("Update entity fields."),
 		mcp.WithString("id", mcp.Required(), mcp.Description("Entity ID")),
 		mcp.WithString("title", mcp.Description("New title")),
@@ -328,7 +337,8 @@ func registerEditTool(srv *mcpsvr.MCPServer, s store.Store) {
 }
 
 func registerDeleteTool(srv *mcpsvr.MCPServer, s store.Store) {
-	tool := mcp.NewTool("knowledgeprim_delete",
+	tool := mcp.NewTool(
+		"knowledgeprim_delete",
 		mcp.WithDescription("Delete an entity and its edges."),
 		mcp.WithString("id", mcp.Required(), mcp.Description("Entity ID to delete")),
 	)
@@ -345,7 +355,8 @@ func registerDeleteTool(srv *mcpsvr.MCPServer, s store.Store) {
 }
 
 func registerDiscoverTool(srv *mcpsvr.MCPServer, s store.Store) {
-	tool := mcp.NewTool("knowledgeprim_discover",
+	tool := mcp.NewTool(
+		"knowledgeprim_discover",
 		mcp.WithDescription("Run discovery: orphans, clusters, bridges, temporal, weak-edges."),
 		mcp.WithBoolean("orphans", mcp.Description("Find entities with no edges")),
 		mcp.WithBoolean("clusters", mcp.Description("Find densely connected groups")),
@@ -373,7 +384,8 @@ func registerDiscoverTool(srv *mcpsvr.MCPServer, s store.Store) {
 }
 
 func registerTypesTool(srv *mcpsvr.MCPServer, s store.Store) {
-	tool := mcp.NewTool("knowledgeprim_types",
+	tool := mcp.NewTool(
+		"knowledgeprim_types",
 		mcp.WithDescription("List all entity types with counts."),
 	)
 	srv.AddTool(tool, func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
@@ -386,7 +398,8 @@ func registerTypesTool(srv *mcpsvr.MCPServer, s store.Store) {
 }
 
 func registerRelationshipsTool(srv *mcpsvr.MCPServer, s store.Store) {
-	tool := mcp.NewTool("knowledgeprim_relationships",
+	tool := mcp.NewTool(
+		"knowledgeprim_relationships",
 		mcp.WithDescription("List all relationship types with counts."),
 	)
 	srv.AddTool(tool, func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
@@ -399,7 +412,8 @@ func registerRelationshipsTool(srv *mcpsvr.MCPServer, s store.Store) {
 }
 
 func registerStatsTool(srv *mcpsvr.MCPServer, s store.Store) {
-	tool := mcp.NewTool("knowledgeprim_stats",
+	tool := mcp.NewTool(
+		"knowledgeprim_stats",
 		mcp.WithDescription("Get aggregate knowledge graph statistics."),
 	)
 	srv.AddTool(tool, func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {

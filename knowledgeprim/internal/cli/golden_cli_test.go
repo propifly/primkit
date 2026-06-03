@@ -44,7 +44,8 @@ func TestGolden_Capture(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			s := goldenTestStore(t)
-			out := goldenExecCmd(t, s, "capture",
+			out := goldenExecCmd(
+				t, s, "capture",
 				"--type", "thought",
 				"--title", "Edge compute is the real moat",
 				"--source", "test",
