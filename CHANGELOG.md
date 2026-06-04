@@ -4,6 +4,34 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [v0.5.3] - 2026-06-04
+
+### Changed
+
+- **dependencies**: Updated `github.com/mark3labs/mcp-go` from `v0.46.0` to
+  `v0.54.1` across `taskprim`, `stateprim`, `knowledgeprim`, and `queueprim`.
+  This keeps the MCP server implementation current while preserving the
+  existing CLI, API, and store boundaries.
+- **dependencies**: Updated `modernc.org/sqlite` from `v1.48.2` to `v1.51.0`
+  in the shared `primkit` module, along with the required transitive module
+  updates. No database migrations or schema changes are included.
+
+## [v0.5.2] - 2026-04-18
+
+### Fixed
+
+- **all prims**: `go install` builds now report the module version from Go
+  build metadata when ldflags are not injected by the release build.
+
+### Changed
+
+- **dependencies**: Synchronized SQLite-related module versions across the
+  primitive modules and refreshed MCP dependency metadata.
+- **docs**: Updated public install/setup guidance, agent-facing links, and
+  README presentation for the open-source release flow.
+- **project tooling**: Removed the repository-local ship command in favor of
+  the shared workflow.
+
 ## [v0.5.1] - 2026-03-20
 
 ### Fixed
