@@ -8,70 +8,68 @@ hatchable:
   status: draft
 ---
 
-# Gaps
+# Primkit Brand Gaps
 
-## Blocking Gaps
+Gaps are missing decisions, missing source-grade materials, or missing proof needed before production brand guidance can be finalized. They are not conflicts unless two supplied sources disagree, and no such conflict was identified.
 
-No blocking gaps are identified for this source-map stage.
+Gaps are grouped by owning domain so each downstream domain can see its handoff directly. Severity remains explicit per row: Blocking means the gap blocks final production brand identity, source-package release, or application rules. It does not block completion of this source-map artifact.
 
-The supplied brief identifies Primkit, explains what it does, names its audience context, states the operating model, and provides a practical infrastructure-focused public promise and broad brand-feel constraints. The input is thin prose intake material, but intake mode is supported and does not block the brand chain.
+## brand-foundation
 
-Conflicts are not listed as gaps. No conflicts were identified in the supplied sources.
+Owns foundational positioning, audience, promise, and voice decisions before direction generation.
 
-## Non-Blocking Gaps
+| Gap ID | Severity | Gap | Evidence | Needed Decision |
+| --- | --- | --- | --- | --- |
+| `GAP:final-voice-system` | Blocking | Final voice system is missing. Current site language and owner answers establish strong constraints, including source-listed signature phrases, but not a complete production voice system. | `SOURCE:brief-observed-site-language`, `SOURCE:owner-answers-first-pass`, `SOURCE:site-landing-page`, `SOURCE:site-hero-terminal`, `SOURCE:site-navigation-hero-copy` | Approve the Primkit voice system: audience priority, tone range, proof-to-promise balance, source-listed signature phrases including "Composable like any Unix tool." and "Persistent state for AI agents.", allowed precise terms, forbidden claims, and examples for landing page, docs, README, CLI help, and social contexts. |
+| `GAP:application-rules` | Blocking | Application rules are missing for how the brand should be used across website, docs, README, CLI help, demos, social previews, and future product surfaces. | `SOURCE:owner-answers-first-pass`, `SOURCE:site-landing-page`, `SOURCE:site-hero-terminal`, `SOURCE:site-navigation-hero-copy`, `SOURCE:site-design-note`, `SOURCE:product-demo-tape` | Define where and how Primkit's voice, proof language, mark, palette, typography, terminal demos, diagrams, CTAs, docs cards, and rejected labels apply across each production surface. |
+| `GAP:de-facto-copy-examples` | Non-blocking | Current de facto copy examples, owner-listed signature phrases, and the four-question problem framing are spread across site files, summaries, and owner answers, not organized as approved voice examples. | `SOURCE:brief-observed-site-language`, `SOURCE:owner-answers-first-pass`, `SOURCE:site-landing-page`, `SOURCE:site-hero-terminal`, `SOURCE:site-navigation-hero-copy` | Select which current phrases, source-listed signature phrases, and four-question problem framing should become canonical examples, which should remain site-specific, and which should be revised after final voice decisions. |
 
-These missing decisions are non-blocking because the source-map task can complete without resolving them. They should remain `Missing` until an owner or downstream domain settles them from valid evidence. They are grouped below by owning domain so each downstream owner can route its open decisions directly.
+## brand-visual-identity
 
-### `brand-foundation`
+Owns production visual identity, asset packaging, typography, color, accessibility, media, and token rules.
 
-| Gap ID | Missing Decision | Evidence Limit | Severity |
-| --- | --- | --- | --- |
-| `GAP:audience-priority` | Primary audience priority is not settled among agentic coding environments, multi-agent workflows, and developers working with durable local state. | `SOURCE:primkit-brand-brief` names these audiences but does not rank the first audience or buyer/user emphasis. | Medium |
-| `GAP:positioning-emphasis` | The strongest positioning emphasis is not settled between local infrastructure primitives, session-surviving state, no-server operation, and agent-native workflow support. | The brief contains all of these ideas but does not choose a hierarchy beyond the practical infrastructure-focused current public promise. | Medium |
-| `GAP:personality-balance` | The final balance of local-first, sharp, durable, and agent-native personality traits is not settled. | The brief gives directional traits and avoidance constraints, but no priority, examples, or edge cases. | Medium |
+| Gap ID | Severity | Gap | Evidence | Needed Decision |
+| --- | --- | --- | --- | --- |
+| `GAP:final-visual-identity` | Blocking | Final visual identity is missing. The navy/cyan robot system is current operating evidence, but the supplied sources do not approve it as the finished identity. | `SOURCE:brief-observed-visual-language`, `SOURCE:owner-answers-first-pass`, `SOURCE:site-design-note`, `SOURCE:site-design-tokens`, `SOURCE:site-token-css`, `ASSET:site-robot-mark`, `ASSET:site-social-preview` | Decide whether the current navy/cyan robot-led visual system is final, intentionally evolved, or replaced; define the approved palette, mark role, composition rules, imagery posture, and production identity boundaries. |
+| `GAP:source-grade-asset-package` | Blocking | Source-grade asset package is missing. All supplied image and media files are export-only or reference-only evidence. | `ASSET:site-robot-mark`, `ASSET:site-social-preview`, `ASSET:product-logo`, `ASSET:product-social-preview`, `SOURCE:site-design-note`, `.canon/brand/brand-source-map/asset-inventory.md#source-grade-assets` | Provide or approve editable source files, logo lockups, mark variants, social-preview templates, source/export naming, versioning, checksums, clearspace, minimum-size rules, and export recipes. |
+| `GAP:typography-system` | Blocking | Final typography system is missing. Token slots and CSS usage exist, but no approved type choices, license records, or usage hierarchy were supplied. | `SOURCE:site-design-tokens`, `SOURCE:site-token-css`, `SOURCE:site-design-note` | Approve typefaces, font sources, licenses, fallback stacks, display/UI/mono roles, sizing rhythm, code/terminal text treatment, and loading policy. |
+| `GAP:accessibility-rules` | Blocking | Accessibility rules are incomplete. Sources note cyan usage constraints and provisional tokens, but do not provide final contrast, state, or alternative-text rules. | `SOURCE:site-design-tokens`, `SOURCE:site-token-css`, `SOURCE:site-design-note`, `ASSET:site-social-preview`, `ASSET:product-demo-gif`, `ASSET:product-demo-mp4` | Approve accessibility rules for color contrast, cyan-on-light usage, focus states, non-color cues, reduced-motion behavior, media captions or alternatives, social-preview readability, and dark/light surface pairings. |
+| `GAP:demo-media-production-use` | Non-blocking | Demo GIF/MP4 production use is not settled. The media supports product proof, but reuse rights, quality, captions, poster frames, and update workflow are not approved. | `ASSET:product-demo-gif`, `ASSET:product-demo-mp4`, `SOURCE:product-demo-tape`, `SOURCE:product-demo-setup-script` | Decide whether demo media is part of the production brand asset package and, if yes, approve source scripts, replay process, captions, poster frames, compression targets, and update ownership. |
+| `GAP:icon-diagram-screenshot-system` | Non-blocking | Iconography, diagrams, screenshots, and product-proof illustration rules are not defined. | `SOURCE:site-landing-page`, `SOURCE:site-hero-terminal`, `SOURCE:owner-answers-first-pass`, `.canon/brand/brand-source-map/asset-inventory.md#missing-obvious-variants` | Define whether Primkit uses icons, diagrams, terminal captures, screenshots, or other proof visuals; specify style, density, labels, accessibility, and when each visual form is appropriate. |
+| `GAP:token-lineage-and-export-rules` | Non-blocking | Token lineage and export governance are incomplete. Current values are known, but the sources do not settle final token ownership, release format, or change policy. | `SOURCE:site-design-tokens`, `SOURCE:site-token-css`, `SOURCE:site-design-note` | Decide the canonical token source, final token names, color role mapping, dark/light behavior, export format, versioning, and rules for future token changes. |
 
-### `brand-directions`
+## brand-decisions
 
-| Gap ID | Missing Decision | Evidence Limit | Severity |
-| --- | --- | --- | --- |
-| `GAP:verbal-system` | Final voice, tagline, message hierarchy, terminology rules, and example copy are not settled. | The brief supplies useful phrases and a practical infrastructure-focused public promise but no complete verbal identity system. | Medium |
-| `GAP:visual-identity` | Logo, mark, color palette, typography, iconography, imagery, diagram style, and layout direction are not settled. | `asset-inventory.md` records no source-grade visual assets, no export-only assets, and no approved variants. | High |
-| `GAP:production-assets` | Source-grade asset formats, approved variants, file ownership, licensing, and production readiness are not settled. | No approved master logo, palette, font, icon, template, or design-system source file was supplied. | High |
-| `GAP:application-contexts` | The priority brand application contexts are not settled. | No website copy set, docs style sample, product screenshot, deck, proposal, social asset, or application source was supplied as brand evidence. | Low |
+Owns owner verdict consolidation for decisions that require explicit approval, rights confirmation, or rejection.
 
-### `brand-decisions`
+| Gap ID | Severity | Gap | Evidence | Needed Decision |
+| --- | --- | --- | --- | --- |
+| `GAP:licensing-and-ownership` | Blocking | Licensing and ownership are unresolved for the mark, social preview, typography, and demo media. | `ASSET:site-robot-mark`, `ASSET:site-social-preview`, `ASSET:product-logo`, `ASSET:product-social-preview`, `ASSET:product-demo-gif`, `ASSET:product-demo-mp4`, `SOURCE:site-design-tokens`, `SOURCE:site-token-css` | Confirm authorship, ownership, license status, permitted uses, redistribution rights, attribution needs, and approval authority for visual assets, fonts, and demo media. |
 
-| Gap ID | Missing Decision | Evidence Limit | Severity |
-| --- | --- | --- | --- |
-| `GAP:references-and-anti-references` | Admired references, disliked references, and explicit anti-directions are not settled. | The brief says to avoid abstract, cute, or overbuilt expression, but it does not provide rejected sources, inspiration sources, or named references. | Medium |
+## brand-directions
+
+Owns use of source-map constraints and reference qualities when developing brand direction options.
+
+| Gap ID | Severity | Gap | Evidence | Needed Decision |
+| --- | --- | --- | --- | --- |
+| `GAP:inspiration-audit-boundary` | Non-blocking | Inspiration references are owner-named but not externally audited. | `SOURCE:inspiration-sqlite`, `SOURCE:inspiration-git`, `SOURCE:inspiration-ripgrep`, `SOURCE:inspiration-tailscale-docs`, `SOURCE:inspiration-fly-io`, `SOURCE:inspiration-unix-tool-philosophy` | Decide whether downstream direction work should audit these references directly or use only the owner-stated qualities: durable, local-first, sharp CLI, practical docs, confident infrastructure, and composable tools. |
 
 ## Owning Domain
 
-| Owning Domain | Gap Ownership |
-| --- | --- |
-| `brand-foundation` | Resolves foundational strategic choices that affect positioning, audience emphasis, and personality priorities. |
-| `brand-directions` | Explores unresolved verbal, visual, production-asset, and application-context decisions without treating missing source evidence as approved direction. |
-| `brand-decisions` | Collects owner verdicts on judgment calls such as references, anti-references, and unresolved preferences. |
+Owning domains identify where the decision should be resolved or prepared downstream:
+
+- `brand-foundation`: owns foundational positioning, audience, promise, and voice decisions before direction generation.
+- `brand-directions`: owns use of source-map constraints and reference qualities when developing brand direction options.
+- `brand-decisions`: owns owner verdict consolidation for decisions that require explicit approval, rights confirmation, or rejection.
+- `brand-visual-identity`: owns production visual identity, asset packaging, typography, color, accessibility, media, and token rules.
 
 ## Severity
 
-| Severity | Meaning In This Artifact |
-| --- | --- |
-| High | Needed before production-grade visual identity or source-grade asset approval, but not blocking source-map completion. |
-| Medium | Meaningfully shapes downstream directions and owner review, but the next domain can proceed with the gap recorded. |
-| Low | Useful for refinement or later application work, but not needed to continue the brand chain. |
+Severity values used here:
+
+- Blocking: must be resolved before final production identity, production asset packaging, or application rules are treated as complete.
+- Non-blocking: does not prevent `brand-foundation` or `brand-directions` from proceeding, but must be resolved before the affected production surface or asset type is finalized.
 
 ## Needed Decision
 
-| Gap ID | Needed Decision |
-| --- | --- |
-| `GAP:audience-priority` | Decide which named audience should receive primary emphasis first. |
-| `GAP:positioning-emphasis` | Decide which source-backed positioning idea should lead the brand foundation. |
-| `GAP:personality-balance` | Decide how to weight the supplied personality traits and avoidance constraints. |
-| `GAP:verbal-system` | Decide the final verbal system, including voice, tagline, message hierarchy, and terminology rules. |
-| `GAP:visual-identity` | Decide the visual identity system from downstream direction work and owner review. |
-| `GAP:production-assets` | Decide which asset sources, variants, formats, and licensing records become approved source-grade assets. |
-| `GAP:references-and-anti-references` | Decide which references and anti-references should shape or constrain direction generation. |
-| `GAP:application-contexts` | Decide which brand application contexts should guide downstream examples and checks. |
-
-No proposed defaults are supplied for these gaps. Source-silent decisions remain missing until valid downstream evidence or owner decisions settle them.
+Each needed decision is written as reviewable decision text for the owning domain. Downstream work should preserve the distinction between missing decisions and rejected directions: rejected sources constrain what not to do, while the gaps above define what still needs a positive owner or domain decision.
