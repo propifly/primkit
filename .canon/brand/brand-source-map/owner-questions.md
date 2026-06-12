@@ -102,14 +102,22 @@ explicitly labeled provisional.
 
 Existing site and asset references to carry forward:
 
-- Sibling repo: `primkit-site`
-- Landing page: `src/app/(home)/page.tsx`
-- Terminal demo: `src/app/(home)/hero-terminal.tsx`
-- Site navigation and hero copy: `docs-navigation.json`
-- Robot mark: `public/logo.png`
-- Social preview with robot and tagline: `public/social-preview.png`
-- Interim design tokens: `.design/design-tokens.tokens.json`
-- Implemented token CSS: `src/app/globals.css`
+- Sibling repo root:
+  `/Users/avergara/development/propifly/primkit-site`
+- Landing page:
+  `/Users/avergara/development/propifly/primkit-site/src/app/(home)/page.tsx`
+- Terminal demo:
+  `/Users/avergara/development/propifly/primkit-site/src/app/(home)/hero-terminal.tsx`
+- Site navigation and hero copy:
+  `/Users/avergara/development/propifly/primkit-site/docs-navigation.json`
+- Robot mark:
+  `/Users/avergara/development/propifly/primkit-site/public/logo.png`
+- Social preview with robot and tagline:
+  `/Users/avergara/development/propifly/primkit-site/public/social-preview.png`
+- Interim design tokens:
+  `/Users/avergara/development/propifly/primkit-site/.design/design-tokens.tokens.json`
+- Implemented token CSS:
+  `/Users/avergara/development/propifly/primkit-site/src/app/globals.css`
 - Palette continuity: brand navy `#181848`, navy ink `#14152b`, brand cyan `#00d8f0`, AA-safe cyan `#0b7285`, cool paper `#fbfcfe`, soft paper `#f3f6fb`, wash `#e9edf6`.
 
 1. Primary audience: developers and teams already using AI coding agents who need durable local state across sessions.
