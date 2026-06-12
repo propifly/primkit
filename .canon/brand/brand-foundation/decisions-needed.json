@@ -1,0 +1,103 @@
+{
+  "domain": "brand-foundation",
+  "emissions": [
+    {
+      "id": "DECISION:audience-first-round-emphasis",
+      "area": "audience",
+      "classification": "Missing",
+      "statement": "First-round audience emphasis is missing: brand directions need an owner decision on whether to lead with individual developers using agents day to day or teams standardizing agent workflows.",
+      "evidence": [
+        ".canon/brand/brand-foundation/audience.md#missing-audience-decisions",
+        ".canon/brand/brand-source-map/owner-questions.md",
+        "SOURCE:owner-answers-first-pass"
+      ],
+      "owningDomain": "brand-foundation",
+      "recommendation": "Choose one lead audience for first-round direction work while preserving the confirmed broader audience of developers and teams using AI coding agents."
+    },
+    {
+      "id": "DECISION:audience-buyer-user-split",
+      "area": "audience",
+      "classification": "Missing",
+      "statement": "Buyer-versus-user split is missing: sources do not define procurement roles, executive buyers, or departmental segments beyond developers and teams.",
+      "evidence": [
+        ".canon/brand/brand-foundation/audience.md#missing-audience-decisions",
+        "SOURCE:owner-answers-first-pass",
+        "SOURCE:brief-product-summary"
+      ],
+      "owningDomain": "brand-foundation",
+      "recommendation": "Keep buyer and user unified as capable technical users unless later owner evidence adds separate buying roles."
+    },
+    {
+      "id": "DECISION:audience-secondary-ranking",
+      "area": "audience",
+      "classification": "Missing",
+      "statement": "Secondary audience ranking is missing: sources do not choose whether agentic coding environment builders or multi-agent workflow operators should lead as the secondary audience, or whether they should remain co-secondary.",
+      "evidence": [
+        ".canon/brand/brand-foundation/audience.md#missing-audience-decisions",
+        "SOURCE:owner-answers-first-pass",
+        "SOURCE:brief-product-summary"
+      ],
+      "owningDomain": "brand-foundation",
+      "recommendation": "Keep both secondary audiences co-secondary until brand-decisions records a ranked emphasis."
+    },
+    {
+      "id": "DECISION:claims-proof-required-current-site",
+      "area": "claims",
+      "classification": "Missing",
+      "statement": "Approval status for proof-required current site claims is missing: trust-strip claims, broad installation or compatibility phrases, and final terminal-proof use need proof or owner confirmation before they become approved brand claims.",
+      "evidence": [
+        ".canon/brand/brand-foundation/claim-boundaries.md#proof-required-claims",
+        ".canon/brand/brand-foundation/promise-and-principles.md#missing-decisions",
+        "SOURCE:brief-observed-site-language",
+        "SOURCE:site-landing-page",
+        "SOURCE:site-hero-terminal"
+      ],
+      "owningDomain": "brand-foundation",
+      "recommendation": "Approve proof-required claims claim by claim, separating license proof, packaging proof, compatibility proof, interface proof, and proof-mode approval."
+    },
+    {
+      "id": "DECISION:voice-final-voice-system",
+      "area": "voice",
+      "classification": "Missing",
+      "statement": "Final voice system is missing: audience priority, tone range, the owner austerity judgment about how austere Primkit can feel before becoming too cold or unfinished, proof-to-promise balance, exact handling of source-listed language (\"Give your agents state that survives the session.\"; \"State that survives the session.\"; \"The agent resets. The work shouldn't.\"; \"Four standalone CLIs. Four SQLite files. No daemon.\"; \"Explicit, not automatic. A file, not a fleet.\"; \"Four tools, one agent loop.\"; \"Composable like any Unix tool.\"; \"Persistent state for AI agents.\"), allowed terms, forbidden claims, and examples across landing page, docs, README, CLI help, and social contexts remain unresolved.",
+      "evidence": [
+        ".canon/brand/brand-foundation/promise-and-principles.md#missing-decisions",
+        ".canon/brand/brand-source-map/gaps.md#brand-foundation",
+        "SOURCE:brief-observed-site-language",
+        "SOURCE:owner-answers-first-pass"
+      ],
+      "owningDomain": "brand-foundation",
+      "recommendation": "Resolve after the audience emphasis decision; preserve promise-then-proof, rejected-claim constraints, the owner austerity question, exact source-listed phrase traceability, and four-question framing traceability (\"what was I doing\"; \"did we already do this\"; \"what did we learn\"; \"what still needs to run\") while leaving expressive territory to downstream direction and verbal identity work."
+    },
+    {
+      "id": "DECISION:application-production-rules",
+      "area": "application",
+      "classification": "Missing",
+      "statement": "Production application rules are missing for website, docs, README, CLI help, demos, social previews, and future product surfaces.",
+      "evidence": [
+        ".canon/brand/brand-foundation/promise-and-principles.md#missing-decisions",
+        ".canon/brand/brand-foundation/claim-boundaries.md#unsupported-claims",
+        ".canon/brand/brand-source-map/gaps.md#brand-foundation",
+        "SOURCE:owner-answers-first-pass",
+        "SOURCE:site-landing-page"
+      ],
+      "owningDomain": "brand-foundation",
+      "recommendation": "Preserve the confirmed first-round priority: website landing page and docs first, with CLI help and command examples secondary. Do not treat current surface patterns as approved production rules until brand-decisions records the cross-surface scope and proof rules."
+    },
+    {
+      "id": "DECISION:messaging-de-facto-copy-examples",
+      "area": "messaging",
+      "classification": "Missing",
+      "statement": "Canonical handling of messaging examples is missing: observed current-site phrases, source-listed language (\"Give your agents state that survives the session.\"; \"State that survives the session.\"; \"The agent resets. The work shouldn't.\"; \"Four standalone CLIs. Four SQLite files. No daemon.\"; \"Explicit, not automatic. A file, not a fleet.\"; \"Four tools, one agent loop.\"; \"Composable like any Unix tool.\"; \"Persistent state for AI agents.\"), and the four-question problem framing (\"what was I doing\"; \"did we already do this\"; \"what did we learn\"; \"what still needs to run\") need a decision on what becomes canonical, site-specific, or revised.",
+      "evidence": [
+        ".canon/brand/brand-foundation/claim-boundaries.md#unsupported-claims",
+        ".canon/brand/brand-source-map/gaps.md#brand-foundation",
+        "SOURCE:brief-observed-site-language",
+        "SOURCE:owner-answers-first-pass",
+        "SOURCE:site-navigation-hero-copy"
+      ],
+      "owningDomain": "brand-foundation",
+      "recommendation": "Use observed current-site phrases, source-listed phrase inputs, and the four questions only as inputs until an owner verdict selects canonical examples."
+    }
+  ]
+}
