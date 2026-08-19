@@ -4,6 +4,22 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [v0.5.4] - 2026-08-19
+
+### Changed
+
+- **dependencies**: Updated `github.com/mark3labs/mcp-go` from `v0.54.1` to
+  `v0.58.0` across `taskprim`, `stateprim`, `knowledgeprim`, and `queueprim`.
+- **dependencies**: Updated `github.com/stretchr/testify` from `v1.11.1` to
+  `v1.12.0` in all modules.
+- **dependencies**: Updated `github.com/benbjohnson/litestream` from `v0.5.11`
+  to `v0.5.16` and `modernc.org/sqlite` from `v1.51.0` to `v1.56.0` in the
+  shared `primkit` module, along with the required transitive module updates.
+  No database migrations or schema changes are included.
+- **ci**: Bumped `actions/checkout` and `actions/setup-go` from v6 to v7, and
+  pinned the CI Go toolchain to `1.26.6` so `govulncheck` picks up the
+  standard-library fixes in that point release.
+
 ## [v0.5.3] - 2026-06-04
 
 ### Changed
