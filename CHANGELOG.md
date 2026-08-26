@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Changed
+
+- **dependencies**: Updated `github.com/stretchr/testify` from `v1.12.0` to
+  `v1.12.1` in all modules.
+- **dependencies**: Updated `modernc.org/sqlite` from `v1.56.0` to `v1.57.0`
+  in the shared `primkit` module, along with the required transitive module
+  updates. Existing DSNs are unchanged; the new `_defensive` parameter is
+  opt-in. No database migrations or schema changes are included.
+
 ## [v0.5.4] - 2026-08-19
 
 ### Changed
